@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebaseConfig';
-import Navbar from '../components/Navbar'
+import Navbar from '../components/Navbar';
 
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { 
   Search, MapPin, LayoutGrid, Tent, Home, Camera, Sofa, 
   Bike, Car, PartyPopper, Smartphone, Music, Sparkles, 
   Dog, Gamepad2, Navigation, ShieldCheck, IndianRupee,
-  ChevronLeft, ChevronRight, MessageCircle, Info
+  ChevronLeft, ChevronRight, MessageCircle, Info, Heart
 } from 'lucide-react';
 
 const BrowseItems = () => {
@@ -19,8 +19,13 @@ const BrowseItems = () => {
   const [category, setCategory] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState({});
+  
+  // New state for saved items
+  const [savedItems, setSavedItems] = useState(() => {
+    const saved = localStorage.getItem('wishlist');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  // 1. Category Definition with Icons
   const categories = [
     { name: 'All', icon: <LayoutGrid size={22} /> },
     { name: 'Tent House Items', icon: <Tent size={22} /> },
@@ -36,6 +41,11 @@ const BrowseItems = () => {
     { name: 'Pets', icon: <Dog size={22} /> },
     { name: 'Video Games', icon: <Gamepad2 size={22} /> },
   ];
+
+  // Persist saved items to localStorage
+  useEffect(() => {
+    localStorage.setItem('wishlist', JSON.stringify(savedItems));
+  }, [savedItems]);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -54,26 +64,30 @@ const BrowseItems = () => {
     fetchItems();
   }, []);
 
-  // 2. Optimized Filter & Sort Logic
   useEffect(() => {
     let temp = [...items];
-
-    // Search filter
     if (search.trim()) {
       temp = temp.filter(i => i.title?.toLowerCase().includes(search.toLowerCase()));
     }
-
-    // Category filter
     if (category !== 'all') {
       temp = temp.filter(i => i.category?.toLowerCase() === category.toLowerCase());
     }
-
-    // Sort logic
     if (sort === 'priceLowHigh') temp.sort((a, b) => a.rentPrice - b.rentPrice);
     else if (sort === 'priceHighLow') temp.sort((a, b) => b.rentPrice - a.rentPrice);
-
     setFilteredItems(temp);
   }, [search, category, sort, items]);
+
+  const toggleLike = (e, item) => {
+    e.stopPropagation();
+    setSavedItems(prev => {
+      const isSaved = prev.find(i => i.id === item.id);
+      if (isSaved) {
+        return prev.filter(i => i.id !== item.id);
+      } else {
+        return [...prev, item];
+      }
+    });
+  };
 
   const handleImageNav = (e, itemId, direction, max) => {
     e.stopPropagation();
@@ -89,10 +103,9 @@ const BrowseItems = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-32">
       <Navbar />
-      {/* PREMIUM HEADER & CATEGORIES */}
+      
       <div className="sticky top-0 z-[60] bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-4">
         <div className="max-w-7xl mx-auto space-y-4">
-          {/* Search Bar */}
           <div className="relative group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
             <input
@@ -103,7 +116,6 @@ const BrowseItems = () => {
             />
           </div>
 
-          {/* Dynamic Categories */}
           <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-2">
             {categories.map((cat) => (
               <button 
@@ -129,7 +141,6 @@ const BrowseItems = () => {
         </div>
       </div>
 
-      {/* ITEMS GRID */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 mt-8">
         {loading ? (
            <div className="flex justify-center items-center py-20">
@@ -140,6 +151,7 @@ const BrowseItems = () => {
             {filteredItems.map(item => {
               const isExpanded = expandedId === item.id;
               const imgIdx = activeImageIndex[item.id] || 0;
+              const isLiked = savedItems.some(i => i.id === item.id);
 
               return (
                 <div 
@@ -150,7 +162,6 @@ const BrowseItems = () => {
                     : 'hover:shadow-xl hover:-translate-y-1'
                   }`}
                 >
-                  {/* Image Section */}
                   <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                     <img 
                       src={item.images?.[imgIdx] || 'https://via.placeholder.com/600x450'} 
@@ -158,6 +169,18 @@ const BrowseItems = () => {
                       alt={item.title}
                     />
                     
+                    {/* HEART / LIKE BUTTON */}
+                    <button 
+                      onClick={(e) => toggleLike(e, item)}
+                      className={`absolute top-5 right-5 p-3 rounded-2xl backdrop-blur-md transition-all duration-300 z-20 ${
+                        isLiked 
+                        ? 'bg-red-500 text-white shadow-lg shadow-red-200 scale-110' 
+                        : 'bg-white/20 text-white hover:bg-white hover:text-red-500'
+                      }`}
+                    >
+                      <Heart size={20} fill={isLiked ? "currentColor" : "none"} strokeWidth={2.5} />
+                    </button>
+
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
 
                     {item.images?.length > 1 && (
@@ -172,7 +195,6 @@ const BrowseItems = () => {
                     </div>
                   </div>
 
-                  {/* Content Section */}
                   <div className="p-6 md:p-8">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
@@ -187,7 +209,6 @@ const BrowseItems = () => {
                       </div>
                     </div>
 
-                    {/* EXPANDED CONTENT */}
                     <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-6' : 'grid-rows-[0fr] opacity-0'}`}>
                       <div className="overflow-hidden space-y-6">
                         <div className="h-px bg-slate-100 w-full" />
@@ -215,7 +236,7 @@ const BrowseItems = () => {
                               <p className="font-black text-slate-900">+91 {item.mobile}</p>
                             </div>
                             <button 
-                              onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${item.location?.lat},${item.location?.lng}`)} 
+                              onClick={() => window.open(`https://www.google.com/maps?q=${item.location?.lat},${item.location?.lng}`)} 
                               className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm hover:shadow-md transition-all"
                             >
                               <Navigation size={20} />
