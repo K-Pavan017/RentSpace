@@ -79,18 +79,20 @@ export default function AddItem() {
   };
 
   const wordCount = formData.description.trim().split(/\s+/).filter(Boolean).length;
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+  
 
   /* ---------------- CLOUDINARY UPLOAD ---------------- */
   const uploadToCloudinary = async (file) => {
     const data = new FormData();
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+    const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
     data.append('file', file);
     data.append('upload_preset', uploadPreset);//rents_upload
     data.append('folder', category);
 
     const res = await fetch(
-      'https://api.cloudinary.com/v1_1/{cloudName}/image/upload',
+      url,
       { method: 'POST', body: data }
     );
 
