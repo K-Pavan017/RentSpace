@@ -51,7 +51,7 @@ export default function Navbar() {
           <NavLink to="/home" className="flex-shrink-0 flex items-center gap-3 group">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg shadow-blue-100 group-hover:scale-110 transition-transform duration-300">
               <img 
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWvdOeAA_GZccvr6aXPDhzM0MRzHOLu1tkNQ&s" 
+                src="https://c8.alamy.com/comp/2D1NJKC/initial-letter-rs-logo-or-sr-logo-vector-design-template-2D1NJKC.jpg" 
                 alt="RentSpace Logo" 
                 className="w-full h-full object-cover"
               />
