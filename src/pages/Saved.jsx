@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Trash2, MapPin, Phone, ArrowLeft, Info } from 'lucide-react';
+import { Heart, Trash2, MapPin, Phone, ArrowLeft, Info, MessageCircle, Navigation, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
 const Saved = () => {
   const [savedItems, setSavedItems] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null); 
   const navigate = useNavigate();
 
-  // 1. Sync with the 'wishlist' key used in BrowseItems
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('wishlist') || '[]');
     setSavedItems(saved);
@@ -17,10 +17,8 @@ const Saved = () => {
     const updated = savedItems.filter(item => item.id !== id);
     setSavedItems(updated);
     localStorage.setItem('wishlist', JSON.stringify(updated));
-    
-    // Optional: Dispatch a storage event if you want other tabs/components 
-    // to update immediately
     window.dispatchEvent(new Event("storage"));
+    if(selectedItem?.id === id) setSelectedItem(null); 
   };
 
   return (
@@ -29,7 +27,7 @@ const Saved = () => {
       
       <div className="max-w-7xl mx-auto px-6 pt-10">
         <button 
-          onClick={() => navigate(-1)} // Takes user back to previous page
+          onClick={() => navigate(-1)} 
           className="group flex items-center gap-2 text-slate-400 font-bold mb-8 hover:text-blue-600 transition-all"
         >
           <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
@@ -42,95 +40,127 @@ const Saved = () => {
           <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tight">
             Saved <span className="text-blue-600">Items</span>
           </h1>
-          <p className="text-slate-500 font-medium text-lg">
-            You have {savedItems.length} {savedItems.length === 1 ? 'item' : 'items'} ready for rent.
-          </p>
         </header>
 
         {savedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[3rem] border-2 border-dashed border-slate-200 text-center">
-            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-6">
-              <Heart size={48} />
-            </div>
+            <Heart size={48} className="text-slate-200 mb-6" />
             <h3 className="text-2xl font-bold text-slate-800">Your wishlist is empty</h3>
-            <p className="text-slate-500 mt-2 mb-8 max-w-xs">
-              Explore our collection and tap the heart icon to save items you're interested in!
-            </p>
-            <button 
-              onClick={() => navigate('/browse')} // Adjust path to your browse route
-              className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
-            >
-              Start Browsing
-            </button>
+            <button onClick={() => navigate('/browse')} className="mt-8 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold">Start Browsing</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {savedItems.map(item => (
-              <div 
-                key={item.id} 
-                className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-200/60 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
-              >
-                {/* Image Section */}
+              <div key={item.id} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
                 <div className="relative h-64 overflow-hidden">
-                  <img 
-                    src={item.images?.[0] || 'https://via.placeholder.com/600x450'} 
-                    alt={item.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-60 transition-opacity" />
-                  
-                  <button 
-                    onClick={() => removeSavedItem(item.id)}
-                    className="absolute top-5 right-5 bg-white/90 backdrop-blur-md p-3 rounded-2xl text-red-500 shadow-xl hover:bg-red-500 hover:text-white transition-all transform hover:rotate-12"
-                    title="Remove from saved"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-
-                  <div className="absolute bottom-5 left-5 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full shadow-sm">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">{item.category}</span>
-                  </div>
+                  <img src={item.images?.[0]} alt={item.title} className="w-full h-full object-cover" />
+                  <button onClick={() => removeSavedItem(item.id)} className="absolute top-5 right-5 bg-white/90 p-3 rounded-2xl text-red-500 shadow-xl"><Trash2 size={20} /></button>
                 </div>
                 
-                {/* Content Section */}
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-xl font-black text-slate-900 leading-tight">{item.title}</h2>
-                    <div className="text-right">
-                      <p className="text-xl font-black text-blue-600">₹{item.rentPrice}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Per Day</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 pt-6 border-t border-slate-50">
-                    <div className="flex items-center gap-3 text-slate-600 font-bold text-xs uppercase tracking-tight">
-                      <div className="p-2 bg-blue-50 rounded-lg">
-                        <MapPin size={16} className="text-blue-500" />
-                      </div>
-                      {item.address?.district || 'Location N/A'}
-                    </div>
-                    
-                    <div className="flex gap-3">
-                      <a 
-                        href={`tel:${item.mobile}`} 
-                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-600 transition-colors shadow-lg"
-                      >
-                        <Phone size={16} /> Call
-                      </a>
-                      <button 
-                        onClick={() => navigate(`/item/${item.id}`)} // Link to your specific item detail page
-                        className="p-4 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all"
-                      >
-                        <Info size={20} />
-                      </button>
-                    </div>
-                  </div>
+                <div className="p-8 text-center">
+                  <h2 className="text-xl font-black text-slate-900 mb-2">{item.title}</h2>
+                  <p className="text-2xl font-black text-blue-600 mb-6">₹{item.rentPrice} <span className="text-xs text-slate-400 uppercase">/ Day</span></p>
+                  
+                  <button 
+                    onClick={() => setSelectedItem(item)} 
+                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Info size={18} /> View Details
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* --- FULL DETAILS MODAL --- */}
+      {selectedItem && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            
+            <div className="relative h-56 shrink-0">
+              <img src={selectedItem.images?.[0]} className="w-full h-full object-cover" alt="" />
+              <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 bg-white p-2 rounded-full shadow-lg text-slate-900 hover:bg-slate-100"><X size={20}/></button>
+            </div>
+
+            <div className="p-8 overflow-y-auto">
+              <h2 className="text-3xl font-black text-slate-900 mb-1">{selectedItem.title}</h2>
+              <p className="text-blue-600 font-bold mb-6 text-xl">₹{selectedItem.rentPrice} / Day</p>
+
+              <div className="space-y-6 mb-8 text-left">
+                {/* Description */}
+                <div>
+                   <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Description</h4>
+                   <p className="text-slate-600 leading-relaxed font-medium">{selectedItem.description || "No description provided."}</p>
+                </div>
+
+               {/* Granular Address Section */}
+<div>
+  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Detailed Address</h4>
+  <div className="flex gap-3 text-slate-600 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+    <MapPin size={20} className="text-blue-500 shrink-0 mt-1" />
+    <div className="text-sm space-y-1">
+      {/* House Number & Area */}
+      <p className="font-black text-slate-900">
+        {(selectedItem.address?.houseNo || selectedItem.address?.house_no) && 
+          `${selectedItem.address?.houseNo || selectedItem.address?.house_no}, `}
+        {selectedItem.address?.place}
+      </p>
+
+      {/* Landmark - Checks for multiple possible naming styles */}
+      {(selectedItem.address?.landmark || selectedItem.address?.landMark || selectedItem.address?.land_mark) && (
+        <p className="text-slate-500 font-medium">
+          <span className="text-blue-400 font-bold text-[10px] uppercase mr-1">Landmark:</span>
+          {selectedItem.address?.landmark || selectedItem.address?.landMark || selectedItem.address?.land_mark}
+        </p>
+      )}
+
+      {/* City, District, State */}
+      <p className="text-slate-500 pt-1 border-t border-slate-200 mt-1">
+        {selectedItem.address?.city && `${selectedItem.address.city}, `}
+        {selectedItem.address?.district}, {selectedItem.address?.state}
+      </p>
+    </div>
+  </div>
+</div>
+
+                {/* Owner Details Box */}
+                <div className="flex items-center justify-between p-5 bg-blue-600 rounded-[2rem] shadow-lg shadow-blue-100">
+                  <div>
+                    <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Owner Contact</p>
+                    <p className="font-black text-white text-lg">+91 {selectedItem.mobile}</p>
+                  </div>
+                  <button 
+                     onClick={() => window.open(`https://www.google.com/maps?q=${selectedItem.location?.lat},${selectedItem.location?.lng}`)}
+                     className="p-4 bg-white text-blue-600 rounded-2xl shadow-sm hover:scale-110 transition-all active:scale-90"
+                  >
+                    <Navigation size={22} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <a 
+                  href={`tel:${selectedItem.mobile}`} 
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm text-center flex items-center justify-center gap-2 active:scale-95 transition-all"
+                >
+                  <Phone size={18} /> Call
+                </a>
+                <a 
+                  href={`https://wa.me/91${selectedItem.mobile}?text=Hi, I'm interested in ${selectedItem.title}`} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-sm text-center flex items-center justify-center gap-2 active:scale-95 transition-all"
+                >
+                  <MessageCircle size={18}/> WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

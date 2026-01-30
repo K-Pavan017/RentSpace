@@ -147,7 +147,7 @@ const BrowseItems = () => {
              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
            </div>
         ) : filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             {filteredItems.map(item => {
               const isExpanded = expandedId === item.id;
               const imgIdx = activeImageIndex[item.id] || 0;
@@ -199,9 +199,14 @@ const BrowseItems = () => {
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
                         <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">{item.title}</h2>
-                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-semibold uppercase">
-                          <MapPin size={12} className="text-blue-500" /> {item.address?.district}
-                        </div>
+                        <div className="flex items-start gap-1.5 text-slate-500 text-[11px] font-bold uppercase tracking-tight">
+                        <MapPin size={14} className="text-blue-500 shrink-0 mt-0.5" /> 
+                        <span>
+                          {item.address?.houseNo && `${item.address.houseNo}, `}
+                          {item.address?.place && `${item.address.place}, `}
+                          {item.address?.district}
+                        </span>
+                      </div>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-black text-blue-600">₹{item.rentPrice}</p>
@@ -242,12 +247,26 @@ const BrowseItems = () => {
                               <Navigation size={20} />
                             </button>
                           </div>
-                          <div className="flex gap-2">
-                            <a href={`tel:${item.mobile}`} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm text-center shadow-lg shadow-blue-200 active:scale-95 transition-all">Call Now</a>
-                            <a href={`https://wa.me/91${item.mobile}?text=Hi, I am interested in your ${item.title}`} target="_blank" rel="noreferrer" className="flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-sm text-center shadow-lg shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-2">
-                              <MessageCircle size={18}/> WhatsApp
-                            </a>
-                          </div>
+                          <div className="flex gap-3 mt-4 w-full">
+                          {/* Call Button - Added flex-1 to match WhatsApp width */}
+                          <a 
+                            href={`tel:${item.mobile}`} 
+                            className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm text-center shadow-lg shadow-blue-100 active:scale-95 transition-all flex items-center justify-center"
+                          >
+                            Call Now
+                          </a>
+
+                          {/* WhatsApp Button - Kept flex-1 and improved centering */}
+                          <a 
+                            href={`https://wa.me/91${item.mobile}?text=Hi, I am interested in your ${item.title}`} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-sm text-center shadow-lg shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-2"
+                          >
+                            <MessageCircle size={18}/> 
+                            <span>WhatsApp</span>
+                          </a>
+                        </div>
                         </div>
                       </div>
                     </div>
