@@ -273,54 +273,47 @@ const BrowseItems = () => {
                             Chat
                           </a>
                         </div>
-                        <div className="w-full max-w-md md:mx-auto grid grid-flow-row items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50">       
-                           {/* Duration Selection */}
-                          <div className="flex flex-col px-4 py-2 border-r border-slate-200 min-w-[120px]">
-                          <label className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-0.5">
-                            Duration
-                          </label>
+                        {/* Change the outer container to be more flexible */}
+                        <div className="w-full max-w-md mx-auto flex flex-col md:flex-row items-start md:items-center gap-2 p-4 bg-white rounded-3xl border border-slate-100 shadow-xl">
                           
-                          <div className="relative flex items-center">
-                            {!showCustomInput ? (
-                              <>
+                          {/* Remove border-r on mobile; use border-b instead, or no border */}
+                          <div className="flex flex-col px-4 py-2 border-b md:border-b-0 md:border-r border-slate-200 w-full md:w-auto md:min-w-[120px]">
+                            <label className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-0.5">
+                              Duration
+                            </label>
+                            
+                            <div className="relative flex items-center">
+                              {!showCustomInput ? (
                                 <select 
                                   value={days}
-                                  onChange={(e) => {
-                                    if (e.target.value === "custom") {
-                                      setShowCustomInput(true);
-                                    } else {
-                                      setDays(e.target.value);
-                                    }
-                                  }}
-                                  // Removed appearance-none so you can see the arrow, or styled it:
-                                  className="w-full bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer pr-4"
+                                  onChange={(e) => e.target.value === "custom" ? setShowCustomInput(true) : setDays(e.target.value)}
+                                  className="w-full bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer pr-4 py-1"
                                 >
                                   {[1, 2, 3, 7, 10, 15, 30].map(d => (
                                     <option key={d} value={d}>{d} {d === 1 ? 'Day' : 'Days'}</option>
                                   ))}
                                   <option value="custom" className="text-emerald-600 font-semibold">+ Enter Days</option>
                                 </select>
-                              </>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <input 
-                                  autoFocus
-                                  type="number"
-                                  placeholder="00"
-                                  className="w-12 bg-transparent text-emerald-600 font-bold text-sm focus:outline-none"
-                                  value={customDays}
-                                  onChange={(e) => setCustomDays(e.target.value)}
-                                />
-                                <button 
-                                  onClick={() => { setShowCustomInput(false); setCustomDays(""); }}
-                                  className="text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded hover:bg-slate-300"
-                                >
-                                  ESC
-                                </button>
-                              </div>
-                            )}
+                              ) : (
+                                <div className="flex items-center gap-2 w-full">
+                                  <input 
+                                    autoFocus
+                                    type="number"
+                                    placeholder="00"
+                                    className="w-full md:w-12 bg-transparent text-emerald-600 font-bold text-sm focus:outline-none"
+                                    value={customDays}
+                                    onChange={(e) => setCustomDays(e.target.value)}
+                                  />
+                                  <button 
+                                    onClick={() => { setShowCustomInput(false); setCustomDays(""); }}
+                                    className="text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded hover:bg-slate-300 whitespace-nowrap"
+                                  >
+                                    ESC
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
                         </div>
                           {/* Book Now Button */}
                           <div className="mt-2 w-full">
