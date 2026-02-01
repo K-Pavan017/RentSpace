@@ -213,8 +213,8 @@ const BrowseItems = () => {
                       </div>
                       </div>
                       <div className="text-right">
-                        <p className="text font-black text-blue-600">₹{item.rentPrice}<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.category === 'houses' ? '/Month' : '/Day'}</span></p>
-                        
+                        <p className="text font-black text-blue-600">₹{item.rentPrice}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.category === 'houses' ? '/Month' : '/Day'}</p>
                       </div>
                     </div>
 
@@ -222,7 +222,7 @@ const BrowseItems = () => {
                       <div className="overflow-hidden space-y-6">
                         <div className="h-px bg-slate-100 w-full" />
                         
-                        <div className="grid grid-cols-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="flex-1 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 flex items-center gap-1"><ShieldCheck size={12}/> Condition</p>
                             <p className="font-bold text-slate-800 text-sm">{item.condition || 'Mint'}</p>
@@ -239,17 +239,20 @@ const BrowseItems = () => {
                         </div>
 
                         <div className="p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50 space-y-4">
-                          <div className="flex items-center justify-between">
+                          <div className="grid grid-cols-1 items-center justify-between">
                             <div>
                               <p className="text-[10px] font-bold text-blue-400 uppercase">Owner Details:</p>
                               <p className="font-black text-slate-900">{item.mobile}</p>
                             </div>
-                            <button 
+                            <div className="flex items-center gap-3">
+                              <button 
                               onClick={() => window.open(`https://www.google.com/maps?q=${item.location?.lat},${item.location?.lng}`)} 
                               className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm hover:shadow-md transition-all"
                             >
+                              <span>Location </span>
                               <Navigation size={20} />
                             </button>
+                            </div>
                           </div>
                           <div className="flex gap-3 mt-4 w-full">
                           {/* Call Button - Added flex-1 to match WhatsApp width */}
@@ -270,8 +273,7 @@ const BrowseItems = () => {
                             Chat
                           </a>
                         </div>
-                        <div className="grid-flow-row items-center gap-3 p-2 pt-4 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50 max-w-md">
-      
+                        <div className="w-full max-w-md md:mx-auto grid grid-flow-row items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50">       
                            {/* Duration Selection */}
                           <div className="flex flex-col px-4 py-2 border-r border-slate-200 min-w-[120px]">
                           <label className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-0.5">
@@ -319,17 +321,21 @@ const BrowseItems = () => {
                             )}
                           </div>
                         </div>
+                        </div>
                           {/* Book Now Button */}
+                          <div className="mt-2 w-full">
+                          {/* Your other content (Title, Price, etc.) would go here */}
+
                           <a 
-                            href={`https://wa.me/91${item.mobile}?text=Hi, I want to take rent your ${item.title} for ${selectedDuration} ${selectedDuration=="1"?"Day.":"Days."} .`} 
+                            href={`https://wa.me/91${item.mobile}?text=Hi, I want to take rent your ${item.title} for ${selectedDuration} ${selectedDuration === "1" ? "Day." : "Days."}`} 
                             target="_blank" 
                             rel="noreferrer" 
-                            className="mt-6 flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-sm text-center shadow-lg shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-2 group"
+                            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-base text-center shadow-lg shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-2 group"
                           >
                             <span>Book Now</span>
                             <svg 
                               xmlns="http://www.w3.org/2000/svg" 
-                              className="h-4 w-4 group-hover:translate-x-1 transition-transform" 
+                              className="h-5 w-5 group-hover:translate-x-1 transition-transform" 
                               fill="none" viewBox="0 0 24 24" stroke="currentColor"
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
