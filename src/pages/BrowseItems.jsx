@@ -239,17 +239,17 @@ const BrowseItems = () => {
                         </div>
 
                         <div className="p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50 space-y-4">
-                          <div className="grid grid-cols-1 items-center justify-between">
+                          <div className="grid grid-cols-1 items-center justify-center md:grid-cols-2 gap-4">
                             <div>
                               <p className="text-[10px] font-bold text-blue-400 uppercase">Owner Details:</p>
                               <p className="font-black text-slate-900">{item.mobile}</p>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center gap-3">
                               <button 
                               onClick={() => window.open(`https://www.google.com/maps?q=${item.location?.lat},${item.location?.lng}`)} 
                               className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm hover:shadow-md transition-all"
                             >
-                              <span>Location </span>
+                              <span>Map </span>
                               <Navigation size={20} />
                             </button>
                             </div>
@@ -274,12 +274,12 @@ const BrowseItems = () => {
                           </a>
                         </div>
                            {/* Duration Selection */}
-                          <div className="flex flex-col px-4 py-2 border-r border-slate-200 min-w-[120px]">
-                          <label className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-0.5">
+                          <div className="grid gap-2">
+                          <label className="inline-flex items-center justify-center text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-0.5">
                             Duration
                           </label>
                           
-                          <div className='w-21  px-3 py-2 bg-slate-100 rounded-lg border border-slate-200'>   
+                          <div className='w-half px-2 py-2 bg-slate-50 border border-slate-50 rounded-lg inline-flex items-center justify-center'>   
                             {!showCustomInput ? (
                               <>
                                 <select 
@@ -292,7 +292,7 @@ const BrowseItems = () => {
                                     }
                                   }}
                                   // Removed appearance-none so you can see the arrow, or styled it:
-                                  className="w-full bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer"
+                                  className="bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer"
                                 >
                                   {[1, 2, 3, 7, 10, 15, 30].map(d => (
                                     <option key={d} value={d}>{d} {d === 1 ? 'Day' : 'Days'}</option>
@@ -332,13 +332,6 @@ const BrowseItems = () => {
                             className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-base text-center shadow-lg shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-2 group"
                           >
                             <span>Book Now</span>
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg" 
-                              className="h-5 w-4 group-hover:translate-x-1 transition-transform" 
-                              fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
                           </a>
                         </div>
                         </div>
