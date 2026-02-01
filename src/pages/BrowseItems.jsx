@@ -19,6 +19,9 @@ const BrowseItems = () => {
   const [category, setCategory] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState({});
+  const [days, setDays] = useState("1");
+  const [customDays, setCustomDays] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
   
   // New state for saved items
   const [savedItems, setSavedItems] = useState(() => {
@@ -26,6 +29,7 @@ const BrowseItems = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const selectedDuration = showCustomInput && customDays ? customDays : days;
   const categories = [
     { name: 'All', icon: <LayoutGrid size={22} /> },
     { name: 'Tent House Items', icon: <Tent size={22} /> },
@@ -198,7 +202,7 @@ const BrowseItems = () => {
                   <div className="p-6 md:p-8">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
-                        <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">{item.title}</h2>
+                        <h2 className="text font-bold text-slate-900 tracking-tight leading-tight">{item.title}</h2>
                         <div className="flex items-start gap-1.5 text-slate-500 text-[11px] font-bold uppercase tracking-tight">
                         <MapPin size={14} className="text-blue-500 shrink-0 mt-0.5" /> 
                         <span>
@@ -209,8 +213,8 @@ const BrowseItems = () => {
                       </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-black text-blue-600">₹{item.rentPrice}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Per Day</p>
+                        <p className="text font-black text-blue-600">₹{item.rentPrice}<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.category === 'houses' ? '/Month' : '/Day'}</span></p>
+                        
                       </div>
                     </div>
 
@@ -218,7 +222,7 @@ const BrowseItems = () => {
                       <div className="overflow-hidden space-y-6">
                         <div className="h-px bg-slate-100 w-full" />
                         
-                        <div className="flex gap-3">
+                        <div className="grid grid-cols-2">
                           <div className="flex-1 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 flex items-center gap-1"><ShieldCheck size={12}/> Condition</p>
                             <p className="font-bold text-slate-800 text-sm">{item.condition || 'Mint'}</p>
@@ -237,8 +241,8 @@ const BrowseItems = () => {
                         <div className="p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50 space-y-4">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-[10px] font-bold text-blue-400 uppercase">Owner Details</p>
-                              <p className="font-black text-slate-900">+91 {item.mobile}</p>
+                              <p className="text-[10px] font-bold text-blue-400 uppercase">Owner Details:</p>
+                              <p className="font-black text-slate-900">{item.mobile}</p>
                             </div>
                             <button 
                               onClick={() => window.open(`https://www.google.com/maps?q=${item.location?.lat},${item.location?.lng}`)} 
@@ -253,7 +257,7 @@ const BrowseItems = () => {
                             href={`tel:${item.mobile}`} 
                             className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm text-center shadow-lg shadow-blue-100 active:scale-95 transition-all flex items-center justify-center"
                           >
-                            Call Now
+                            Call
                           </a>
 
                           {/* WhatsApp Button - Kept flex-1 and improved centering */}
@@ -263,8 +267,73 @@ const BrowseItems = () => {
                             rel="noreferrer" 
                             className="flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-sm text-center shadow-lg shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-2"
                           >
-                            <MessageCircle size={18}/> 
-                            <span>WhatsApp</span>
+                            Chat
+                          </a>
+                        </div>
+                        <div className="grid-flow-row items-center gap-3 p-2 pt-4 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50 max-w-md">
+      
+                           {/* Duration Selection */}
+                          <div className="flex flex-col px-4 py-2 border-r border-slate-200 min-w-[120px]">
+                          <label className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-0.5">
+                            Duration
+                          </label>
+                          
+                          <div className="relative flex items-center">
+                            {!showCustomInput ? (
+                              <>
+                                <select 
+                                  value={days}
+                                  onChange={(e) => {
+                                    if (e.target.value === "custom") {
+                                      setShowCustomInput(true);
+                                    } else {
+                                      setDays(e.target.value);
+                                    }
+                                  }}
+                                  // Removed appearance-none so you can see the arrow, or styled it:
+                                  className="w-full bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer pr-4"
+                                >
+                                  {[1, 2, 3, 7, 10, 15, 30].map(d => (
+                                    <option key={d} value={d}>{d} {d === 1 ? 'Day' : 'Days'}</option>
+                                  ))}
+                                  <option value="custom" className="text-emerald-600 font-semibold">+ Enter Days</option>
+                                </select>
+                              </>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <input 
+                                  autoFocus
+                                  type="number"
+                                  placeholder="00"
+                                  className="w-12 bg-transparent text-emerald-600 font-bold text-sm focus:outline-none"
+                                  value={customDays}
+                                  onChange={(e) => setCustomDays(e.target.value)}
+                                />
+                                <button 
+                                  onClick={() => { setShowCustomInput(false); setCustomDays(""); }}
+                                  className="text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded hover:bg-slate-300"
+                                >
+                                  ESC
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                          {/* Book Now Button */}
+                          <a 
+                            href={`https://wa.me/91${item.mobile}?text=Hi, I want to take rent your ${item.title} for ${selectedDuration} ${selectedDuration=="1"?"Day.":"Days."} .`} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="mt-6 flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-sm text-center shadow-lg shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-2 group"
+                          >
+                            <span>Book Now</span>
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className="h-4 w-4 group-hover:translate-x-1 transition-transform" 
+                              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
                           </a>
                         </div>
                         </div>

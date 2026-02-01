@@ -4,7 +4,6 @@ import {
   Plus, 
   User, 
   MessageCircle, 
-  Settings, 
   HelpCircle, 
   LogOut,
   Heart,
@@ -74,8 +73,8 @@ export default function Navbar() {
               onClick={() => navigate('/add-property')}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95"
             >
-              <Plus size={18} />
-              <span className="hidden xs:inline">List Item</span>
+              <Plus size={18}  />
+              <span className="xs:inline">List Item</span>
             </button>
 
             <div className="relative pl-2 sm:pl-4 border-l border-slate-100" ref={dropdownRef}>
@@ -92,7 +91,7 @@ export default function Navbar() {
                 <div className="absolute right-0 mt-4 w-64 bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-slate-100 p-3 animate-in fade-in zoom-in slide-in-from-top-2 duration-300">
                   <MenuLink icon={<LayoutDashboard className="text-blue-500" />} label="Dashboard" onClick={() => navigate('/browse')} />
                   <MenuLink icon={<MessageCircle className="text-emerald-500" />} label="WhatsApp Support" onClick={() => window.open('https://wa.me/917993242204')} />
-                  <MenuLink icon={<Settings className="text-slate-500" />} label="Settings" onClick={() => navigate('/settings')} />
+                  
                   <MenuLink icon={<HelpCircle className="text-amber-500" />} label="Help Center" onClick={() => navigate('/help')} />
                   <div className="my-2 border-t border-slate-50" />
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm">
@@ -111,7 +110,7 @@ export default function Navbar() {
           <MobileTab to="/home" icon={<Home size={22} />} label="Home" />
           <MobileTab to="/browse" icon={<Search size={22} />} label="Browse" />
           <MobileTab to="/saved" icon={<Heart size={22} />} label="Saved" />
-          <MobileTab to="/add-property" icon={<Plus size={22} />} label="List Item" />
+          <MobileTab to="/add-property" icon={<Plus size={22} List Item />} label="List Item" />
         </div>
       </div>
     </>
