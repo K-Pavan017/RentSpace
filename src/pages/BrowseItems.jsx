@@ -273,48 +273,71 @@ const BrowseItems = () => {
                             Chat
                           </a>
                         </div>
-                        {/* Change the outer container to be more flexible */}
-                        <div className="w-full max-w-md mx-auto flex flex-col md:flex-row items-start md:items-center gap-2 p-4 bg-white rounded-3xl border border-slate-100 shadow-xl">
-                          
-                          {/* Remove border-r on mobile; use border-b instead, or no border */}
-                          <div className="flex flex-col px-4 py-2 border-b md:border-b-0 md:border-r border-slate-200 w-full md:w-auto md:min-w-[120px]">
-                            <label className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-0.5">
-                              Duration
-                            </label>
-                            
-                            <div className="relative flex items-center">
-                              {!showCustomInput ? (
-                                <select 
-                                  value={days}
-                                  onChange={(e) => e.target.value === "custom" ? setShowCustomInput(true) : setDays(e.target.value)}
-                                  className="w-full bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer pr-4 py-1"
-                                >
-                                  {[1, 2, 3, 7, 10, 15, 30].map(d => (
-                                    <option key={d} value={d}>{d} {d === 1 ? 'Day' : 'Days'}</option>
-                                  ))}
-                                  <option value="custom" className="text-emerald-600 font-semibold">+ Enter Days</option>
-                                </select>
-                              ) : (
-                                <div className="flex items-center gap-2 w-full">
-                                  <input 
-                                    autoFocus
-                                    type="number"
-                                    placeholder="00"
-                                    className="w-full md:w-12 bg-transparent text-emerald-600 font-bold text-sm focus:outline-none"
-                                    value={customDays}
-                                    onChange={(e) => setCustomDays(e.target.value)}
-                                  />
-                                  <button 
-                                    onClick={() => { setShowCustomInput(false); setCustomDays(""); }}
-                                    className="text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded hover:bg-slate-300 whitespace-nowrap"
-                                  >
-                                    ESC
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                       <div className="w-full max-w-md mx-auto flex flex-col md:grid md:grid-cols-1 items-center gap-4 p-4 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50">
+  {/* Duration Selection */}
+  <div className="w-full flex flex-col px-4 py-3 border-b md:border-b-0 md:border-r border-slate-200">
+    <label className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400 mb-1">
+      Duration
+    </label>
+
+    <div className="relative flex items-center min-h-[32px]">
+      {!showCustomInput ? (
+        <select
+          value={days}
+          onChange={(e) => {
+            if (e.target.value === "custom") {
+              setShowCustomInput(true);
+            } else {
+              setDays(e.target.value);
+            }
+          }}
+          className="w-full bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer appearance-none"
+        >
+          {[1, 2, 3, 7, 10, 15, 30].map((d) => (
+            <option key={d} value={d}>
+              {d} {d === 1 ? "Day" : "Days"}
+            </option>
+          ))}
+          <option value="custom" className="text-emerald-600 font-semibold">
+            + Enter Days
+          </option>
+        </select>
+      ) : (
+        <div className="flex items-center justify-between w-full gap-2">
+          <div className="flex items-center gap-1">
+            <input
+              autoFocus
+              type="number"
+              placeholder="00"
+              className="w-16 bg-transparent text-emerald-600 font-bold text-sm focus:outline-none border-b border-emerald-100"
+              value={customDays}
+              onChange={(e) => setCustomDays(e.target.value)}
+            />
+            <span className="text-sm font-bold text-slate-900">Days</span>
+          </div>
+          <button
+            onClick={() => {
+              setShowCustomInput(false);
+              setCustomDays("");
+            }}
+            className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md hover:bg-slate-200 transition-colors"
+          >
+            ESC
+          </button>
+        </div>
+      )}
+      
+      {/* Custom Arrow Icon (Optional but recommended for appearance-none) */}
+      {!showCustomInput && (
+        <div className="pointer-events-none absolute right-0 flex items-center text-slate-400">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="Step 19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
                           {/* Book Now Button */}
                           <div className="mt-2 w-full">
                           {/* Your other content (Title, Price, etc.) would go here */}
