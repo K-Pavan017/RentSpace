@@ -279,7 +279,7 @@ const BrowseItems = () => {
                             Duration
                           </label>
                           
-                          <div className="relative flex items-center">
+                          <div className='w-21  px-3 py-2 bg-slate-100 rounded-lg border border-slate-200'>   
                             {!showCustomInput ? (
                               <>
                                 <select 
@@ -292,7 +292,7 @@ const BrowseItems = () => {
                                     }
                                   }}
                                   // Removed appearance-none so you can see the arrow, or styled it:
-                                  className="w-full bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer pr-4"
+                                  className="w-full bg-transparent text-slate-900 font-bold text-sm focus:outline-none cursor-pointer"
                                 >
                                   {[1, 2, 3, 7, 10, 15, 30].map(d => (
                                     <option key={d} value={d}>{d} {d === 1 ? 'Day' : 'Days'}</option>
@@ -334,7 +334,7 @@ const BrowseItems = () => {
                             <span>Book Now</span>
                             <svg 
                               xmlns="http://www.w3.org/2000/svg" 
-                              className="h-5 w-5 group-hover:translate-x-1 transition-transform" 
+                              className="h-5 w-4 group-hover:translate-x-1 transition-transform" 
                               fill="none" viewBox="0 0 24 24" stroke="currentColor"
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
