@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebaseConfig';
 import Navbar from '../components/Navbar';
-
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { auth } from "../firebaseConfig";
+import {
+  collection,
+  onSnapshot,
+  getDocs,
+  query,
+  orderBy,
+  setDoc,
+  doc
+} from "firebase/firestore";
 import { 
   Search, MapPin, LayoutGrid, Tent, Home, Camera, Sofa, 
   Bike, Car, PartyPopper, Smartphone, Music, Sparkles, 
@@ -22,11 +30,31 @@ const BrowseItems = () => {
   
   // FIX: Per-item selection state to prevent "all items changing at once"
   const [itemDurations, setItemDurations] = useState({}); // { itemId: { days: "1", isCustom: false, customVal: "" } }
+  const [savedItems, setSavedItems] = useState([]);
 
-  const [savedItems, setSavedItems] = useState(() => {
-    const saved = localStorage.getItem('wishlist');
-    return saved ? JSON.parse(saved) : [];
+  
+useEffect(() => {
+  if (!auth.currentUser) return;
+
+  const wishlistRef = collection(
+    db,
+    "users",
+    auth.currentUser.uid,
+    "wishlist"
+  );
+
+  const unsubscribe = onSnapshot(wishlistRef, (snapshot) => {
+    const items = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setSavedItems(items);
   });
+
+  return () => unsubscribe();
+}, []);
+
+
 
   const categories = [
     { name: 'All', icon: <LayoutGrid size={22} /> },
@@ -44,9 +72,6 @@ const BrowseItems = () => {
     { name: 'Video Games', icon: <Gamepad2 size={22} /> },
   ];
 
-  useEffect(() => {
-    localStorage.setItem('wishlist', JSON.stringify(savedItems));
-  }, [savedItems]);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -86,13 +111,30 @@ const BrowseItems = () => {
     setFilteredItems(temp);
   }, [search, category, sort, items]);
 
-  const toggleLike = (e, item) => {
-    e.stopPropagation();
-    setSavedItems(prev => {
-      const isSaved = prev.find(i => i.id === item.id);
-      return isSaved ? prev.filter(i => i.id !== item.id) : [...prev, item];
+  const toggleLike = async (e, item) => {
+  e.stopPropagation();
+  if (!auth.currentUser) return;
+
+  const ref = doc(
+    db,
+    "users",
+    auth.currentUser.uid,
+    "wishlist",
+    item.id
+  );
+
+  const isLiked = savedItems.some(i => i.id === item.id);
+
+  if (isLiked) {
+    await deleteDoc(ref);   // ❌ remove
+  } else {
+    await setDoc(ref, {     // ❤️ save
+      ...item,
+      createdAt: new Date()
     });
-  };
+  }
+};
+
 
   const handleImageNav = (e, itemId, direction, max) => {
     e.stopPropagation();

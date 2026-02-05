@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Heart, Trash2, MapPin, Phone, ArrowLeft, Info, MessageCircle, Navigation, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
+import { onSnapshot } from "firebase/firestore";
 
 const Saved = () => {
   const [savedItems, setSavedItems] = useState([]);
@@ -9,21 +12,62 @@ const Saved = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('wishlist') || '[]');
-    setSavedItems(saved);
-  }, []);
+  if (!auth.currentUser) return;
 
-  const removeSavedItem = (id) => {
-    const updated = savedItems.filter(item => item.id !== id);
-    setSavedItems(updated);
-    localStorage.setItem('wishlist', JSON.stringify(updated));
-    window.dispatchEvent(new Event("storage"));
-    if(selectedItem?.id === id) setSelectedItem(null); 
-  };
+  const wishlistRef = collection(
+    db,
+    "users",
+    auth.currentUser.uid,
+    "wishlist"
+  );
+
+  const unsubscribe = onSnapshot(wishlistRef, (snapshot) => {
+    const items = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setSavedItems(items);
+  });
+
+  return () => unsubscribe();
+}, []);
+
+
+const removeSavedItem = async (itemId) => {
+  if (!auth.currentUser) return;
+
+  try {
+    const itemRef = doc(
+      db,
+      "users",
+      auth.currentUser.uid,
+      "wishlist",
+      itemId
+    );
+
+    await deleteDoc(itemRef);
+
+    // 🔥 Update UI instantly
+    setSavedItems(prev => prev.filter(item => item.id !== itemId));
+
+    // Close modal if deleted item is open
+    if (selectedItem?.id === itemId) {
+      setSelectedItem(null);
+    }
+  } catch (err) {
+    console.error("Error deleting item:", err);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-20">
       <Navbar />
+      <div>
+      {savedItems.map(item => (
+        <div key={item.id}>{item.title}</div>
+      ))}
+    </div>
       
       <div className="max-w-7xl mx-auto px-6 pt-10">
         <button 
