@@ -11,52 +11,90 @@ import Help from './pages/Help'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 
+const ProtectedRoute = ({ user, children }) => {
+  if (!user) {
+    return <Navigate to="/" replace />
+  }
+  return children
+}
 
 function App() {
-  const [user] = useAuthState(auth)
+  const [user, loading] = useAuthState(auth)
   const location = useLocation()
 
-  
+  if (loading) {
+    return <div className="text-center mt-20">Loading...</div>
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
-      
       <main>
-        <Routes>   
-          
+        <Routes>
 
-        <Route 
-          path="/" 
-          element={<Login />}
-        />
-        <Route 
-          path="/signup" 
-          element={<Signup />}
-        />
+          {/* Public Routes */}
+          <Route
+            path="/"
+            element={user ? <Navigate to="/home" replace /> : <Login />}
+          />
+
+          <Route
+            path="/signup"
+            element={user ? <Navigate to="/home" replace /> : <Signup />}
+          />
+
+          {/* Protected Routes */}
           <Route
             path="/home"
-            element={<Home /> }
+            element={
+              <ProtectedRoute user={user}>
+                <Home />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/add-property"
-            element={<CategorySelection />} 
+            element={
+              <ProtectedRoute user={user}>
+                <CategorySelection />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/add-item/:category"
-            element={ <AddItem /> }
-          />
-          <Route path="/saved" element={<Saved />} />
-          <Route
-            path="/help"
-            element={ <Help />}
+            element={
+              <ProtectedRoute user={user}>
+                <AddItem />
+              </ProtectedRoute>
+            }
           />
 
+          <Route
+            path="/saved"
+            element={
+              <ProtectedRoute user={user}>
+                <Saved />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/help"
+            element={
+              <ProtectedRoute user={user}>
+                <Help />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/browse"
-            element={ <BrowseItems />}
+            element={
+              <ProtectedRoute user={user}>
+                <BrowseItems />
+              </ProtectedRoute>
+            }
           />
 
         </Routes>
