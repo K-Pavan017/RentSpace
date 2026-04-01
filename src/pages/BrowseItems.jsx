@@ -6,16 +6,22 @@ import {
   collection,
   onSnapshot,
   getDocs,
+  getDoc,
   query,
+  where,
   orderBy,
   setDoc,
-  doc
+  doc,
+  deleteDoc,
+  addDoc,
+  serverTimestamp
 } from "firebase/firestore";
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, MapPin, LayoutGrid, Tent, Home, Camera, Sofa, 
   Bike, Car, PartyPopper, Smartphone, Music, Sparkles, 
   Dog, Gamepad2, Navigation, ShieldCheck, IndianRupee,
-  ChevronLeft, ChevronRight, Info, Heart
+  ChevronLeft, ChevronRight, Info, Heart, Zap, MessageSquare
 } from 'lucide-react';
 
 const BrowseItems = () => {
@@ -27,35 +33,12 @@ const BrowseItems = () => {
   const [category, setCategory] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState({});
-  
-  // FIX: Per-item selection state to prevent "all items changing at once"
-  const [itemDurations, setItemDurations] = useState({}); // { itemId: { days: "1", isCustom: false, customVal: "" } }
+  const [itemDurations, setItemDurations] = useState({}); 
   const [savedItems, setSavedItems] = useState([]);
-
   
-useEffect(() => {
-  if (!auth.currentUser) return;
-
-  const wishlistRef = collection(
-    db,
-    "users",
-    auth.currentUser.uid,
-    "wishlist"
-  );
-
-  const unsubscribe = onSnapshot(wishlistRef, (snapshot) => {
-    const items = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    setSavedItems(items);
-  });
-
-  return () => unsubscribe();
-}, []);
-
-
-
+  const [userLocation, setUserLocation] = useState(null);
+  const [maxDistance, setMaxDistance] = useState('any');
+  
   const categories = [
     { name: 'All', icon: <LayoutGrid size={22} /> },
     { name: 'Tent House Items', icon: <Tent size={22} /> },
@@ -72,6 +55,43 @@ useEffect(() => {
     { name: 'Video Games', icon: <Gamepad2 size={22} /> },
   ];
 
+  // Haversine distance formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+  };
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const wishlistRef = collection(db, "users", auth.currentUser.uid, "wishlist");
+    const unsubscribe = onSnapshot(wishlistRef, (snapshot) => {
+      const saved = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSavedItems(saved);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (err) => console.warn("Location Access Denied:", err)
+      );
+    }
+  }, []);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -80,15 +100,12 @@ useEffect(() => {
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setItems(data);
-        setFilteredItems(data);
         
-        // Initialize duration state for each item
         const initialDurations = {};
         data.forEach(item => {
           initialDurations[item.id] = { days: "1", isCustom: false, customVal: "" };
         });
         setItemDurations(initialDurations);
-
       } catch (err) {
         console.error("Fetch Error:", err);
       } finally {
@@ -100,16 +117,71 @@ useEffect(() => {
 
   useEffect(() => {
     let temp = [...items];
+    
     if (search.trim()) {
-      temp = temp.filter(i => i.title?.toLowerCase().includes(search.toLowerCase()));
+      const s = search.toLowerCase();
+      temp = temp.filter(i => 
+        i.title?.toLowerCase().includes(s) || 
+        i.description?.toLowerCase().includes(s) ||
+        i.category?.toLowerCase().includes(s) ||
+        i.address?.place?.toLowerCase().includes(s)
+      );
     }
+
     if (category !== 'all') {
       temp = temp.filter(i => i.category?.toLowerCase() === category.toLowerCase());
     }
+
+    if (maxDistance !== 'any' && userLocation) {
+        temp = temp.filter(i => {
+            if (!i.location) return false;
+            const dist = calculateDistance(userLocation.lat, userLocation.lng, i.location.lat, i.location.lng);
+            return dist !== null && dist <= parseFloat(maxDistance);
+        });
+    }
+
     if (sort === 'priceLowHigh') temp.sort((a, b) => a.rentPrice - b.rentPrice);
     else if (sort === 'priceHighLow') temp.sort((a, b) => b.rentPrice - a.rentPrice);
+    
     setFilteredItems(temp);
-  }, [search, category, sort, items]);
+  }, [search, category, sort, items, userLocation, maxDistance]);
+
+  const navigate = useNavigate();
+
+  const startChat = async (item) => {
+    if (!auth.currentUser) return alert("Please Login First");
+    if (!item.ownerUid) return alert("This item was listed before the messaging update. Please contact through mobile number instead.");
+    if (auth.currentUser.uid === item.ownerUid) return alert("You are the owner of this item");
+
+    // Room ID is deterministic to prevent duplicate chats for the same item/pair
+    const roomId = `${item.id}_${item.ownerUid}_${auth.currentUser.uid}`;
+    
+    try {
+        const chatRef = doc(db, "chats", roomId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (!chatSnap.exists()) {
+            await setDoc(chatRef, {
+                participants: [auth.currentUser.uid, item.ownerUid],
+                itemId: item.id,
+                itemTitle: item.title,
+                itemPrice: item.rentPrice,
+                ownerUid: item.ownerUid,
+                participantNames: {
+                    [auth.currentUser.uid]: auth.currentUser.email.split('@')[0],
+                    [item.ownerUid]: item.ownerEmail?.split('@')[0] || "Owner"
+                },
+                updatedAt: serverTimestamp(),
+                createdAt: serverTimestamp(),
+                lastMessage: "Chat started"
+            });
+        }
+        navigate(`/chat/${roomId}`);
+    } catch (err) {
+        console.error(err);
+        alert("Failed to start chat.");
+    }
+  };
 
   const toggleLike = async (e, item) => {
   e.stopPropagation();
@@ -162,14 +234,32 @@ useEffect(() => {
       {/* Search & Categories */}
       <div className="sticky top-0 z-[60] bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 py-4">
         <div className="max-w-7xl mx-auto space-y-4">
-          <div className="relative group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search for cameras, cars, or furniture..."
-              className="w-full pl-14 pr-6 py-4 bg-slate-100/50 border-none rounded-[2rem] font-medium focus:ring-2 focus:ring-blue-600/20 focus:bg-white transition-all outline-none"
-              onChange={e => setSearch(e.target.value)}
-            />
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative group flex-1 w-full">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search for cameras, cars, or furniture..."
+                className="w-full pl-14 pr-6 py-4 bg-slate-100/50 border-none rounded-[2rem] font-medium focus:ring-2 focus:ring-blue-600/20 focus:bg-white transition-all outline-none"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full md:w-auto bg-slate-100/50 p-2 rounded-[2rem] border border-slate-200/40">
+              <MapPin size={18} className="ml-3 text-slate-400" />
+              <select 
+                value={maxDistance}
+                onChange={(e) => setMaxDistance(e.target.value)}
+                className="bg-transparent text-sm font-bold text-slate-700 outline-none pr-4 cursor-pointer"
+              >
+                <option value="any">Any distance</option>
+                <option value="5">Within 5 km</option>
+                <option value="10">Within 10 km</option>
+                <option value="25">Within 25 km</option>
+                <option value="50">Within 50 km</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-2">
@@ -223,12 +313,19 @@ useEffect(() => {
                   }`}
                 >
                   {/* Image Section */}
-                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                    <img 
-                      src={item.images?.[imgIdx] || 'https://via.placeholder.com/600x450'} 
-                      className={`w-full h-full object-cover transition-transform duration-700 ${isExpanded ? 'scale-105' : 'group-hover:scale-110'}`}
-                      alt={item.title}
-                    />
+                      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                        {item.isBooked && (
+                            <div className="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center">
+                                <div className="bg-red-500 text-white px-6 py-2 rounded-full font-black text-sm uppercase tracking-widest shadow-xl animate-pulse">
+                                    BOOKED
+                                </div>
+                            </div>
+                        )}
+                        <img 
+                          src={item.images?.[activeImageIndex[item.id] || 0] || 'https://via.placeholder.com/600x450'} 
+                          className={`w-full h-full object-cover transition-transform duration-700 ${isExpanded ? 'scale-105' : 'group-hover:scale-110'}`}
+                          alt={item.title}
+                        />
                     
                     <button 
                       onClick={(e) => toggleLike(e, item)}
@@ -256,17 +353,25 @@ useEffect(() => {
                         {/* FIX: Improved Full Address Display logic */}
                         <div className="flex items-start gap-1.5 text-slate-500 text-[11px] font-bold uppercase">
                           <MapPin size={14} className="text-blue-500 shrink-0 mt-0.5" /> 
-                          <span className="line-clamp-2">
-                            {item.address ? (
-                              <>
-                                {item.address.houseNo && `${item.address.houseNo}, `}
-                                {item.address.street && `${item.address.street}, `}
-                                {item.address.place && `${item.address.place}, `}
-                                {item.address.district && `${item.address.district}`}
-                                {item.address.pincode && ` - ${item.address.pincode}`}
-                              </>
-                            ) : "Location Details Unavailable"}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="line-clamp-2">
+                              {item.address ? (
+                                <>
+                                  {item.address.houseNo && `${item.address.houseNo}, `}
+                                  {item.address.street && `${item.address.street}, `}
+                                  {item.address.place && `${item.address.place}, `}
+                                  {item.address.district && `${item.address.district}`}
+                                  {item.address.pincode && ` - ${item.address.pincode}`}
+                                </>
+                              ) : "Location Details Unavailable"}
+                            </span>
+                            {userLocation && item.location && (
+                                <span className="text-blue-600 flex items-center gap-1 normal-case font-black">
+                                    <Navigation size={10} className="fill-current" />
+                                    {calculateDistance(userLocation.lat, userLocation.lng, item.location.lat, item.location.lng).toFixed(1)} km away
+                                </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -314,8 +419,14 @@ useEffect(() => {
                           </div>
 
                           <div className="flex gap-2">
-                            <a href={`tel:${item.mobile}`} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-xs text-center shadow-lg active:scale-95 transition-all">CALL</a>
-                            <a href={`https://wa.me/91${item.mobile}?text=Interested in ${item.title}`} target="_blank" rel="noreferrer" className="flex-1 py-3 bg-emerald-500 text-white rounded-xl font-bold text-xs text-center shadow-lg active:scale-95 transition-all">CHAT</a>
+                            <button 
+                                onClick={() => startChat(item)}
+                                className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm text-center shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                                disabled={item.isBooked}
+                            >
+                                <MessageSquare size={18} /> CHAT NOW
+                            </button>
+                            <a href={`tel:${item.mobile}`} className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl font-bold text-xs text-center shadow-sm active:scale-95 transition-all flex items-center justify-center">CALL</a>
                           </div>
 
                           {/* FIX: Per-item Duration Selection */}

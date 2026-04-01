@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebaseConfig';
+import { db, auth } from '../firebaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import { 
   Camera, 
   MapPin, 
@@ -22,6 +23,7 @@ import {
 export default function AddItem() {
   const { category } = useParams();
   const navigate = useNavigate();
+  const [user] = useAuthState(auth);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -149,6 +151,11 @@ export default function AddItem() {
         isAvailable: formData.isAvailable,
         idVerified: formData.idVerified,
         createdAt: new Date(),
+        // --- Messaging Support ---
+        ownerUid: user?.uid || null,
+        ownerEmail: user?.email || null,
+        isBooked: false,
+        bookedUntil: null,
       });
       alert('Listing added successfully!');
       navigate('/home');

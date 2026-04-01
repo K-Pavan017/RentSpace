@@ -4,11 +4,14 @@ import App from './App.jsx'
 import './index.css'
 import { registerSW } from 'virtual:pwa-register'
 import { BrowserRouter } from 'react-router-dom'
+import { SocketProvider } from './context/SocketContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <SocketProvider>
+        <App />
+      </SocketProvider>
     </BrowserRouter>
   </React.StrictMode>
 )

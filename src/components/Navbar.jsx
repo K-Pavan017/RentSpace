@@ -9,7 +9,8 @@ import {
   Heart,
   LayoutDashboard,
   Search,
-  Home
+  Home,
+  MessageSquare
 } from 'lucide-react';
 import { auth } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
@@ -64,6 +65,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center bg-slate-100/50 p-1.5 rounded-[1.5rem] border border-slate-200/40">
             <PillNavLink to="/home" label="Home" />
             <PillNavLink to="/browse" label="Browse" />
+            <PillNavLink to="/chats" label="Messages" icon={<MessageSquare size={16} />} />
             <PillNavLink to="/saved" label="Saved" icon={<Heart size={16} />} />
           </div>
 
@@ -90,8 +92,7 @@ export default function Navbar() {
               {isMenuOpen && (
                 <div className="absolute right-0 mt-4 w-64 bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-slate-100 p-3 animate-in fade-in zoom-in slide-in-from-top-2 duration-300">
                   <MenuLink icon={<LayoutDashboard className="text-blue-500" />} label="Dashboard" onClick={() => navigate('/browse')} />
-                  <MenuLink icon={<MessageCircle className="text-emerald-500" />} label="WhatsApp Support" onClick={() => window.open('https://wa.me/917993242204')} />
-                  
+                  <MenuLink icon={<MessageSquare className="text-emerald-500" />} label="My Messages" onClick={() => navigate('/chats')} />
                   <MenuLink icon={<HelpCircle className="text-amber-500" />} label="Help Center" onClick={() => navigate('/help')} />
                   <div className="my-2 border-t border-slate-50" />
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm">
@@ -106,11 +107,12 @@ export default function Navbar() {
 
       {/* MOBILE BOTTOM NAVIGATION - Visible only on Mobile/Tablet (hidden on lg) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-xl border-t border-slate-100 px-2 pb-safe-area-inset-bottom">
-        <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+        <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
           <MobileTab to="/home" icon={<Home size={22} />} label="Home" />
           <MobileTab to="/browse" icon={<Search size={22} />} label="Browse" />
+          <MobileTab to="/chats" icon={<MessageSquare size={22} />} label="Messages" />
           <MobileTab to="/saved" icon={<Heart size={22} />} label="Saved" />
-          <MobileTab to="/add-property" icon={<Plus size={22} List Item />} label="List Item" />
+          <MobileTab to="/add-property" icon={<Plus size={22} />} label="List" />
         </div>
       </div>
     </>

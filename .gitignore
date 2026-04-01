@@ -35,3 +35,16 @@ coverage
 # firebase
 serviceAccountKey.json
 .firebaserc
+
+# Build artifacts
+build/
+*/build/
+.gradle/
+.idea/
+*.apk
+*.aar
+*.jks
+captures/
+.externalNativeBuild
+.cxx
+local.properties

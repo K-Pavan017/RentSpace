@@ -10,10 +10,12 @@ import Saved from './pages/Saved'
 import Help from './pages/Help'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import Chats from './pages/Chats'
+import ChatRoom from './pages/ChatRoom'
 
 const ProtectedRoute = ({ user, children }) => {
   if (!user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   }
   return children
 }
@@ -32,8 +34,14 @@ function App() {
         <Routes>
 
           {/* Public Routes */}
+          {/* Authentication Gateway */}
           <Route
             path="/"
+            element={user ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />}
+          />
+
+          <Route
+            path="/login"
             element={user ? <Navigate to="/home" replace /> : <Login />}
           />
 
@@ -84,6 +92,26 @@ function App() {
             element={
               <ProtectedRoute user={user}>
                 <Help />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/chats"
+            element={
+              <ProtectedRoute user={user}>
+                {/* We'll create this component next */}
+                <Chats /> 
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/chat/:roomId"
+            element={
+              <ProtectedRoute user={user}>
+                {/* We'll create this component next */}
+                <ChatRoom />
               </ProtectedRoute>
             }
           />

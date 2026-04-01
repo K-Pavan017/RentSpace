@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { db, auth } from '../firebaseConfig'; // Ensure 'auth' is exported from config
 import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
@@ -18,6 +18,12 @@ const Signup = () => {
   const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
   const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
   const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+  useEffect(() => {
+    if (PUBLIC_KEY) {
+      emailjs.init(PUBLIC_KEY);
+    }
+  }, [PUBLIC_KEY]);
 
   const resetAll = () => {
     setEmail(''); setOtp(''); setPassword(''); setConfirmPassword('');
@@ -42,9 +48,14 @@ const Signup = () => {
         expires: Date.now() + 300000,
       });
 
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: email, otp_code: generatedOtp }, PUBLIC_KEY);
+      console.log("Sending OTP with params:", { to_email: email, otp_code: generatedOtp });
+      await emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: email, otp_code: generatedOtp });
+      console.log("OTP Sent Successfully!");
       setStep('otp');
-    } catch (err) { alert("Error sending OTP"); } finally { setLoading(false); }
+    } catch (err) { 
+      console.error("EmailJS FULL ERROR:", err);
+      alert(`Error sending OTP: ${err.text || err.message || "Unknown error"}. Check console.`); 
+    } finally { setLoading(false); }
   };
 
   const handleVerifyOTP = async (e) => {
