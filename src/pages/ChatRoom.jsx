@@ -19,6 +19,7 @@ export default function ChatRoom() {
   const socket = useSocket();
   const navigate = useNavigate();
   const [chatData, setChatData] = useState(null);
+  const [listingData, setListingData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const scrollRef = useRef();
@@ -55,6 +56,20 @@ export default function ChatRoom() {
 
     return () => { unsubscribe(); unsubscribeMsgs(); };
   }, [roomId, user]);
+
+  // Real-time Listing Data Listener
+  useEffect(() => {
+    if (!chatData?.itemId) return;
+
+    const listingRef = doc(db, 'listings', chatData.itemId);
+    const unsubscribeListing = onSnapshot(listingRef, (snap) => {
+        if (snap.exists()) {
+            setListingData({ id: snap.id, ...snap.data() });
+        }
+    });
+
+    return () => unsubscribeListing();
+  }, [chatData?.itemId]);
 
   // WebSocket Integration (Live Messaging)
   useEffect(() => {
@@ -202,6 +217,31 @@ export default function ChatRoom() {
     });
   };
 
+  const unbookItem = async () => {
+    if (!listingData || !listingData.isBooked) return;
+    if (!window.confirm("Are you sure you want to make this item available for others again?")) return;
+
+    try {
+        await updateDoc(doc(db, 'listings', listingData.id), {
+            isBooked: false,
+            bookedUntil: null,
+            bookedBy: null
+        });
+
+        await addDoc(collection(db, 'chats', roomId, 'messages'), {
+            senderId: 'system',
+            text: `ACTION: Item has been UNBOOKED and is now available for rent again.`,
+            timestamp: serverTimestamp(),
+            type: 'unbooked'
+        });
+
+        alert("Item is successfully unbooked!");
+    } catch (err) {
+        console.error(err);
+        alert("Failed to unbook item.");
+    }
+  };
+
   if (!chatData) return <div className="flex justify-center py-20 animate-pulse">Connecting...</div>;
 
   const isOwner = chatData.ownerUid === user.uid;
@@ -229,13 +269,21 @@ export default function ChatRoom() {
         </div>
         
         <div className="flex items-center gap-4">
+          {listingData?.isBooked && (isOwner || listingData.bookedBy === user.uid) && (
+            <button 
+              onClick={unbookItem}
+              className="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-black hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 border border-red-100"
+            >
+              <AlertCircle size={14} /> UNBOOK ITEM
+            </button>
+          )}
           {!isOwner && (
             <button 
               onClick={sendRequest}
               className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-900 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
-              disabled={chatData.activeRequest}
+              disabled={chatData.activeRequest || listingData?.isBooked}
             >
-              <Package size={14} /> {chatData.activeRequest ? 'REQUEST SENT' : 'REQUEST RENT'}
+              <Package size={14} /> {chatData.activeRequest ? 'REQUEST SENT' : listingData?.isBooked ? 'ALREADY BOOKED' : 'REQUEST RENT'}
             </button>
           )}
         </div>

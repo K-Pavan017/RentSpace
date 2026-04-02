@@ -14,7 +14,8 @@ import {
   doc,
   deleteDoc,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  updateDoc
 } from "firebase/firestore";
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -143,8 +144,26 @@ const BrowseItems = () => {
     if (sort === 'priceLowHigh') temp.sort((a, b) => a.rentPrice - b.rentPrice);
     else if (sort === 'priceHighLow') temp.sort((a, b) => b.rentPrice - a.rentPrice);
     
+    // Internal Helper: Check if item is EXPIRED and needs lazy cleanup
+    const now = new Date();
+    temp.forEach(async (item) => {
+        if (item.isBooked && item.bookedUntil) {
+            const expiry = item.bookedUntil.toDate ? item.bookedUntil.toDate() : new Date(item.bookedUntil);
+            if (now > expiry) {
+                // Lazy Cleanup: Update Firestore
+                try {
+                    await updateDoc(doc(db, 'listings', item.id), {
+                        isBooked: false,
+                        bookedUntil: null,
+                        bookedBy: null
+                    });
+                } catch (err) { console.error("Lazy Cleanup Error:", err); }
+            }
+        }
+    });
+
     setFilteredItems(temp);
-  }, [search, category, sort, items, userLocation, maxDistance]);
+}, [search, category, sort, items, userLocation, maxDistance]);
 
   const navigate = useNavigate();
 
@@ -318,10 +337,13 @@ const BrowseItems = () => {
                 >
                   {/* Image Section */}
                       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                        {item.isBooked && (
+                        {item.isBooked && (item.bookedUntil?.toDate ? item.bookedUntil.toDate() : new Date(item.bookedUntil)) > new Date() && (
                             <div className="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center">
-                                <div className="bg-red-500 text-white px-6 py-2 rounded-full font-black text-sm uppercase tracking-widest shadow-xl animate-pulse">
-                                    BOOKED
+                                <div className="bg-red-500 text-white px-6 py-2 rounded-full font-black text-sm uppercase tracking-widest shadow-xl animate-pulse flex flex-col items-center">
+                                    <span>BOOKED</span>
+                                    <span className="text-[8px] opacity-70 mt-1 uppercase font-bold tracking-tighter">
+                                        Until: {new Date(item.bookedUntil?.toDate ? item.bookedUntil.toDate() : item.bookedUntil).toLocaleDateString()}
+                                    </span>
                                 </div>
                             </div>
                         )}
