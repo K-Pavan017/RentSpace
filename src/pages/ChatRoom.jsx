@@ -10,7 +10,7 @@ import { useSocket } from '../context/SocketContext';
 import Navbar from '../components/Navbar';
 import { 
   Send, User, Clock, ArrowLeft, Package, 
-  CheckCircle, Calendar, ShieldCheck, AlertCircle 
+  CheckCircle, Calendar, ShieldCheck, AlertCircle, Zap
 } from 'lucide-react';
 
 export default function ChatRoom() {
@@ -21,7 +21,6 @@ export default function ChatRoom() {
   const [chatData, setChatData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [bookingProposal, setBookingProposal] = useState(null);
   const scrollRef = useRef();
 
   // Fetch Chat Meta and History from Firestore (Initial Load and Global Sync)
@@ -57,12 +56,11 @@ export default function ChatRoom() {
     });
 
     socket.on('receive_booking_proposal', (data) => {
-      setBookingProposal(data);
+      // Local sync if needed (Firestore onSnapshot already handles most common cases)
     });
 
     socket.on('booking_finalized', async (data) => {
-      // Update local state and show celebratory UI
-      // Important: The actual DB update happens via the "Accept" click below
+      alert("Success! The booking has been confirmed and the item is now booked.");
     });
 
     return () => {
@@ -102,53 +100,90 @@ export default function ChatRoom() {
     setInput('');
   };
 
-  const sendProposal = () => {
+  const sendRequest = async () => {
     const duration = prompt("Enter rental duration (days):", "3");
     if (!duration) return;
 
-    const data = {
-      roomId,
+    const requestData = {
       itemId: chatData.itemId,
-      ownerId: user.uid,
-      tenantId: chatData.participants.find(p => p !== user.uid),
+      tenantId: user.uid,
+      ownerId: chatData.ownerUid,
       duration,
-      price: chatData.itemPrice
+      price: chatData.itemPrice,
+      status: 'pending',
+      timestamp: Date.now()
     };
 
-    socket.emit('send_booking_proposal', data);
-    
-    // Also log as a system message in Firestore
-    addDoc(collection(db, 'chats', roomId, 'messages'), {
-      senderId: 'system',
-      text: `OWNER PROPOSAL: Rent for ${duration} days.`,
-      timestamp: serverTimestamp(),
-      type: 'proposal'
+    // 1. Persist to Firestore (Room Metadata)
+    await updateDoc(doc(db, 'chats', roomId), {
+      activeRequest: requestData,
+      updatedAt: serverTimestamp()
     });
+    
+    // 2. Log as system message
+    await addDoc(collection(db, 'chats', roomId, 'messages'), {
+      senderId: 'system',
+      text: `TENANT REQUEST: Rent for ${duration} days.`,
+      timestamp: serverTimestamp(),
+      type: 'request'
+    });
+
+    // 3. Notify via Socket
+    socket.emit('send_booking_proposal', { roomId, ...requestData });
   };
 
-  const acceptBooking = async () => {
-    if (!bookingProposal) return;
+  const confirmBooking = async () => {
+    const activeRequest = chatData.activeRequest;
+    if (!activeRequest) return;
     
     try {
-        const { itemId, duration } = bookingProposal;
+        const { itemId, duration, tenantId } = activeRequest;
         const bookedUntilDate = new Date();
         bookedUntilDate.setDate(bookedUntilDate.getDate() + parseInt(duration));
 
-        // Update Global Listing status in Firestore
+        // 1. Update Listing status
         await updateDoc(doc(db, 'listings', itemId), {
             isBooked: true,
             bookedUntil: bookedUntilDate,
-            bookedBy: user.uid
+            bookedBy: tenantId
         });
 
-        socket.emit('confirm_booking', { ...bookingProposal, status: 'confirmed' });
+        // 2. Log success system message
+        await addDoc(collection(db, 'chats', roomId, 'messages'), {
+            senderId: 'system',
+            text: `BOOKING CONFIRMED: Item rented for ${duration} days.`,
+            timestamp: serverTimestamp(),
+            type: 'confirmation'
+        });
+
+        // 3. Clear active request from chat
+        await updateDoc(doc(db, 'chats', roomId), {
+            activeRequest: null,
+            updatedAt: serverTimestamp()
+        });
+
+        // 4. Notify via Socket
+        socket.emit('confirm_booking', { roomId, ...activeRequest, status: 'confirmed' });
         
         alert("Booking Confirmed! The item is now listed as booked.");
-        setBookingProposal(null);
     } catch (err) {
         console.error(err);
         alert("Failed to confirm booking.");
     }
+  };
+
+  const declineBooking = async () => {
+    // Clear active request from chat
+    await updateDoc(doc(db, 'chats', roomId), {
+        activeRequest: null,
+        updatedAt: serverTimestamp()
+    });
+
+    await addDoc(collection(db, 'chats', roomId, 'messages'), {
+        senderId: 'system',
+        text: `REQUEST DECLINED: Owner declined the rental request.`,
+        timestamp: serverTimestamp()
+    });
   };
 
   if (!chatData) return <div className="flex justify-center py-20 animate-pulse">Connecting...</div>;
@@ -178,12 +213,13 @@ export default function ChatRoom() {
         </div>
         
         <div className="flex items-center gap-4">
-          {isOwner && (
+          {!isOwner && (
             <button 
-              onClick={sendProposal}
-              className="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-600 transition-all flex items-center gap-2"
+              onClick={sendRequest}
+              className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-900 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
+              disabled={chatData.activeRequest}
             >
-              <Package size={14} /> SEND PROPOSAL
+              <Package size={14} /> {chatData.activeRequest ? 'REQUEST SENT' : 'REQUEST RENT'}
             </button>
           )}
         </div>
@@ -224,8 +260,8 @@ export default function ChatRoom() {
         <div ref={scrollRef} />
       </div>
 
-      {/* Proposal Overlay */}
-      {bookingProposal && (
+      {/* Request Overlay (Persistent from Firestore) */}
+      {chatData.activeRequest && (
         <div className="p-6 bg-emerald-50 border-t border-emerald-100 animate-in slide-in-from-bottom-5 duration-300">
            <div className="max-w-xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
@@ -234,17 +270,23 @@ export default function ChatRoom() {
                  </div>
                  <div>
                     <h4 className="font-black text-emerald-900 uppercase text-xs tracking-widest flex items-center gap-2">
-                        Booking Proposal Received <Zap size={10} className="fill-current"/>
+                        {isOwner ? 'Rent Request Received' : 'Rental Request Pending'} <Zap size={10} className="fill-current text-yellow-400"/>
                     </h4>
-                    <p className="text-sm text-emerald-700 font-bold">Owner is offering {bookingProposal.duration} days for this item.</p>
+                    <p className="text-sm text-emerald-700 font-bold">
+                       {isOwner ? `${otherParty} wants to rent for ${chatData.activeRequest.duration} days.` : `Waiting for ${otherParty} to confirm the ${chatData.activeRequest.duration} day rental.`}
+                    </p>
                  </div>
               </div>
               <div className="flex gap-2 w-full md:w-auto">
-                 <button onClick={() => setBookingProposal(null)} className="px-6 py-3 bg-white text-emerald-600 border border-emerald-200 rounded-2xl text-xs font-bold hover:bg-emerald-100 transition-colors">DECLINE</button>
-                 {!isOwner && (
-                    <button onClick={acceptBooking} className="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all">
-                        ACCEPT & CONFIRM BOOKING
-                    </button>
+                 {isOwner ? (
+                    <>
+                       <button onClick={declineBooking} className="flex-1 md:flex-none px-6 py-3 bg-white text-emerald-600 border border-emerald-200 rounded-2xl text-xs font-bold hover:bg-emerald-100 transition-colors">DECLINE</button>
+                       <button onClick={confirmBooking} className="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-extrabold shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all">
+                           CONFIRM & MARK AS BOOKED
+                       </button>
+                    </>
+                 ) : (
+                    <button onClick={declineBooking} className="px-6 py-3 bg-white/50 text-slate-500 border border-slate-200 rounded-2xl text-xs font-bold hover:bg-white transition-colors">CANCEL REQUEST</button>
                  )}
               </div>
            </div>
