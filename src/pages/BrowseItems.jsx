@@ -171,6 +171,10 @@ const BrowseItems = () => {
                     [auth.currentUser.uid]: auth.currentUser.email.split('@')[0],
                     [item.ownerUid]: item.ownerEmail?.split('@')[0] || "Owner"
                 },
+                unreadCounts: {
+                    [auth.currentUser.uid]: 0,
+                    [item.ownerUid]: 0
+                },
                 updatedAt: serverTimestamp(),
                 createdAt: serverTimestamp(),
                 lastMessage: "Chat started"

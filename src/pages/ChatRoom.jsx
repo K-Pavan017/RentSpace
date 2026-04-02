@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebaseConfig';
 import { 
   doc, onSnapshot, updateDoc, collection, addDoc, 
-  serverTimestamp, getDoc 
+  serverTimestamp, getDoc, increment 
 } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useSocket } from '../context/SocketContext';
@@ -40,6 +40,18 @@ export default function ChatRoom() {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMessages(data.sort((a, b) => a.timestamp?.seconds - b.timestamp?.seconds));
     });
+
+    // Reset unread count for the current user in this chat
+    const resetUnread = async () => {
+        try {
+            await updateDoc(doc(db, 'chats', roomId), {
+                [`unreadCounts.${user.uid}`]: 0
+            });
+        } catch (err) {
+            console.error("Failed to reset unread count:", err);
+        }
+    };
+    resetUnread();
 
     return () => { unsubscribe(); unsubscribeMsgs(); };
   }, [roomId, user]);
@@ -88,9 +100,11 @@ export default function ChatRoom() {
     // 1. Log to Firestore (Persistent History)
     await addDoc(collection(db, 'chats', roomId, 'messages'), msgData);
     
-    // 2. Update Chat Meta (Last Message)
+    // 2. Update Chat Meta (Last Message and Unread Counts)
+    const otherParticipant = chatData.participants.find(p => p !== user.uid);
     await updateDoc(doc(db, 'chats', roomId), {
       lastMessage: input,
+      [`unreadCounts.${otherParticipant}`]: increment(1),
       updatedAt: serverTimestamp()
     });
 
@@ -115,8 +129,10 @@ export default function ChatRoom() {
     };
 
     // 1. Persist to Firestore (Room Metadata)
+    const otherParticipant = chatData.participants.find(p => p !== user.uid);
     await updateDoc(doc(db, 'chats', roomId), {
       activeRequest: requestData,
+      [`unreadCounts.${otherParticipant}`]: increment(1),
       updatedAt: serverTimestamp()
     });
     

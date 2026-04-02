@@ -12,14 +12,39 @@ import {
   Home,
   MessageSquare
 } from 'lucide-react';
-import { auth } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const [user] = useAuthState(auth);
+  const [totalUnread, setTotalUnread] = useState(0);
   const { pathname } = useLocation();
+
+  useEffect(() => {
+    if (!user) {
+        setTotalUnread(0);
+        return;
+    }
+
+    const q = query(collection(db, 'chats'), where('participants', 'array-contains', user.uid));
+    const unsubscribe = onSnapshot(q, (snap) => {
+        let count = 0;
+        snap.docs.forEach(doc => {
+            const data = doc.data();
+            if (data.unreadCounts && data.unreadCounts[user.uid]) {
+                count += data.unreadCounts[user.uid];
+            }
+        });
+        setTotalUnread(count);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -65,7 +90,12 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center bg-slate-100/50 p-1.5 rounded-[1.5rem] border border-slate-200/40">
             <PillNavLink to="/home" label="Home" />
             <PillNavLink to="/browse" label="Browse" />
-            <PillNavLink to="/chats" label="Messages" icon={<MessageSquare size={16} />} />
+            <PillNavLink to="/chats" label="Messages" icon={
+              <div className="relative">
+                <MessageSquare size={16} />
+                {totalUnread > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm">{totalUnread}</span>}
+              </div>
+            } />
             <PillNavLink to="/saved" label="Saved" icon={<Heart size={16} />} />
           </div>
 
@@ -92,7 +122,16 @@ export default function Navbar() {
               {isMenuOpen && (
                 <div className="absolute right-0 mt-4 w-64 bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-slate-100 p-3 animate-in fade-in zoom-in slide-in-from-top-2 duration-300">
                   <MenuLink icon={<LayoutDashboard className="text-blue-500" />} label="Dashboard" onClick={() => navigate('/browse')} />
-                  <MenuLink icon={<MessageSquare className="text-emerald-500" />} label="My Messages" onClick={() => navigate('/chats')} />
+                  <MenuLink 
+                    icon={
+                      <div className="relative">
+                        <MessageSquare className="text-emerald-500" />
+                        {totalUnread > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">{totalUnread}</span>}
+                      </div>
+                    } 
+                    label="My Messages" 
+                    onClick={() => navigate('/chats')} 
+                  />
                   <MenuLink icon={<HelpCircle className="text-amber-500" />} label="Help Center" onClick={() => navigate('/help')} />
                   <div className="my-2 border-t border-slate-50" />
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm">
@@ -110,7 +149,12 @@ export default function Navbar() {
         <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
           <MobileTab to="/home" icon={<Home size={22} />} label="Home" />
           <MobileTab to="/browse" icon={<Search size={22} />} label="Browse" />
-          <MobileTab to="/chats" icon={<MessageSquare size={22} />} label="Messages" />
+          <MobileTab to="/chats" icon={
+            <div className="relative">
+              <MessageSquare size={22} />
+              {totalUnread > 0 && <span className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">{totalUnread}</span>}
+            </div>
+          } label="Messages" />
           <MobileTab to="/saved" icon={<Heart size={22} />} label="Saved" />
           <MobileTab to="/add-property" icon={<Plus size={22} />} label="List" />
         </div>

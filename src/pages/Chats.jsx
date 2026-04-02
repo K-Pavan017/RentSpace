@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../firebaseConfig';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { MessageSquare, User, ArrowRight, Clock } from 'lucide-react';
+import { MessageSquare, User, ArrowRight, Clock, Trash2 } from 'lucide-react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
 export default function Chats() {
@@ -34,6 +34,18 @@ export default function Chats() {
 
     return () => unsubscribe();
   }, [user]);
+  
+  const deleteChat = async (e, chatId) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this conversation? This will remove it for both for you.")) return;
+
+    try {
+        await deleteDoc(doc(db, 'chats', chatId));
+    } catch (err) {
+        console.error("Delete Error:", err);
+        alert("Failed to delete chat.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
@@ -77,7 +89,21 @@ export default function Chats() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-col items-end gap-2">
+                  <div className="flex flex-col items-end gap-3">
+                    <div className="flex items-center gap-2">
+                        {chat.unreadCounts?.[user.uid] > 0 && (
+                            <div className="bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shadow-lg shadow-red-200">
+                                {chat.unreadCounts[user.uid]}
+                            </div>
+                        )}
+                        <button 
+                            onClick={(e) => deleteChat(e, chat.id)}
+                            className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                    
                     <div className="p-3 bg-slate-50 rounded-2xl text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
                       <ArrowRight size={20} />
                     </div>
