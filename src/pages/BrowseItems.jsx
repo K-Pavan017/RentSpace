@@ -509,7 +509,11 @@ const BrowseItems = () => {
                                   className="w-full bg-transparent text-slate-900 font-bold text-sm outline-none cursor-pointer"
                                 >
                                   {[1, 2, 3, 5, 7, 10, 15, 30].map(d => (
-                                    <option key={d} value={d}>{d} {d === 1 ? 'Day' : 'Days'}</option>
+                                    <option key={d} value={d}>
+                                      {d} {item.category?.toLowerCase() === 'houses' 
+                                        ? (d === 1 ? 'Month' : 'Months') 
+                                        : (d === 1 ? 'Day' : 'Days')}
+                                    </option>
                                   ))}
                                   <option value="custom" className="text-emerald-600">+ Enter Custom</option>
                                 </select>
@@ -518,7 +522,7 @@ const BrowseItems = () => {
                                   <input 
                                     autoFocus
                                     type="number"
-                                    placeholder="Days"
+                                    placeholder={item.category?.toLowerCase() === 'houses' ? "Months" : "Days"}
                                     className="flex-1 bg-transparent text-emerald-600 font-bold text-sm outline-none"
                                     value={durationConfig.customVal}
                                     onChange={(e) => updateItemDuration(item.id, 'customVal', e.target.value)}
@@ -537,7 +541,11 @@ const BrowseItems = () => {
                           <div className="flex flex-col gap-1 pb-2">
                              <div className="flex items-center justify-between">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected Duration</p>
-                                <p className="text-xs font-bold text-slate-900">{currentDisplayDays} {currentDisplayDays == 1 ? 'Day' : 'Days'}</p>
+                                <p className="text-xs font-bold text-slate-900">
+                                   {currentDisplayDays} {item.category?.toLowerCase() === 'houses' 
+                                      ? (currentDisplayDays == 1 ? 'Month' : 'Months') 
+                                      : (currentDisplayDays == 1 ? 'Day' : 'Days')}
+                                </p>
                              </div>
                              <div className="flex items-center justify-between">
                                 <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Total Rental Charge</p>
