@@ -36,13 +36,18 @@ export default function MyListings() {
 
     const q = query(
       collection(db, 'listings'),
-      where('ownerUid', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('ownerUid', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setListings(docs);
+      // Client-side sorting by createdAt (descending)
+      const sortedDocs = docs.sort((a, b) => {
+        const dateA = a.createdAt?.seconds ? a.createdAt.seconds : new Date(a.createdAt).getTime() / 1000;
+        const dateB = b.createdAt?.seconds ? b.createdAt.seconds : new Date(b.createdAt).getTime() / 1000;
+        return dateB - dateA;
+      });
+      setListings(sortedDocs);
       setLoading(false);
     }, (err) => {
       console.error(err);

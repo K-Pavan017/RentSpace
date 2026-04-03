@@ -7,14 +7,20 @@
  * 
  * @param {number} basePrice - The original 1-day/1-month rental price.
  * @param {number} days - The number of days/months for the rental.
+ * @param {string} category - The item category (e.g., 'houses', 'cameras').
  * @returns {number} The total calculated price.
  */
-export const calculateTotalRent = (basePrice, days) => {
+export const calculateTotalRent = (basePrice, days, category = '') => {
   if (!basePrice || !days || days <= 0) return 0;
   
-  let total = 0;
   const numDays = parseInt(days);
 
+  // If the item is a House or similar monthly rental, don't apply iterative discount
+  if (category?.toLowerCase() === 'houses') {
+    return Math.round(basePrice * numDays);
+  }
+  
+  let total = 0;
   for (let i = 1; i <= numDays; i++) {
     // Current day's price: basePrice - ((i - 1) * 0.1 * basePrice)
     // Floor the discount at 10% of base price to avoid negative or zero rates

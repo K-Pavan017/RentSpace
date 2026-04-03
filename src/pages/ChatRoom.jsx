@@ -131,10 +131,10 @@ export default function ChatRoom() {
   };
 
   const sendRequest = async () => {
-    const duration = prompt("Enter rental duration (days):", "3");
+    const duration = prompt("Enter rental duration (days/months):", "3");
     if (!duration) return;
 
-    const totalPrice = calculateTotalRent(chatData.itemPrice, duration);
+    const totalPrice = calculateTotalRent(chatData.itemPrice, duration, chatData.itemCategory);
     const requestData = {
       itemId: chatData.itemId,
       tenantId: user.uid,

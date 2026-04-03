@@ -187,6 +187,7 @@ const BrowseItems = () => {
                 itemId: item.id,
                 itemTitle: item.title,
                 itemPrice: item.rentPrice,
+                itemCategory: item.category,
                 ownerUid: item.ownerUid,
                 participantNames: {
                     [auth.currentUser.uid]: auth.currentUser.email.split('@')[0],
@@ -208,7 +209,7 @@ const BrowseItems = () => {
             
             // Only send a new request if there's no active one or if the item is not booked
             if (!chatData?.activeRequest && !item.isBooked) {
-                const totalPrice = calculateTotalRent(item.rentPrice, bookingDuration);
+                const totalPrice = calculateTotalRent(item.rentPrice, bookingDuration, item.category);
                 const requestData = {
                     itemId: item.id,
                     tenantId: auth.currentUser.uid,
@@ -541,8 +542,10 @@ const BrowseItems = () => {
                              <div className="flex items-center justify-between">
                                 <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Total Rental Charge</p>
                                 <div className="text-right">
-                                   <p className="text-lg font-black text-blue-600 leading-none">₹{calculateTotalRent(item.rentPrice, currentDisplayDays)}</p>
-                                   <p className="text-[8px] font-bold text-blue-400 uppercase mt-1 italic leading-none">(Iterative 10% Discount Applied)</p>
+                                   <p className="text-lg font-black text-blue-600 leading-none">₹{calculateTotalRent(item.rentPrice, currentDisplayDays, item.category)}</p>
+                                   <p className="text-[8px] font-bold text-blue-400 uppercase mt-1 italic leading-none">
+                                      {item.category?.toLowerCase() === 'houses' ? '(Monthly Rate)' : '(Iterative 10% Discount Applied)'}
+                                   </p>
                                 </div>
                              </div>
                           </div>
