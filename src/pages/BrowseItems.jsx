@@ -24,6 +24,7 @@ import {
   Dog, Gamepad2, Navigation, ShieldCheck, IndianRupee,
   ChevronLeft, ChevronRight, Info, Heart, Zap, MessageSquare
 } from 'lucide-react';
+import { calculateTotalRent } from '../utils/pricing';
 
 const BrowseItems = () => {
   const [items, setItems] = useState([]);
@@ -206,26 +207,27 @@ const BrowseItems = () => {
             
             // Only send a new request if there's no active one or if the item is not booked
             if (!chatData?.activeRequest && !item.isBooked) {
+                const totalPrice = calculateTotalRent(item.rentPrice, bookingDuration);
                 const requestData = {
                     itemId: item.id,
                     tenantId: auth.currentUser.uid,
                     ownerId: item.ownerUid,
                     duration: bookingDuration,
-                    price: item.rentPrice,
+                    price: totalPrice,
                     status: 'pending',
                     timestamp: Date.now()
                 };
 
                 await updateDoc(chatRef, {
                     activeRequest: requestData,
-                    lastMessage: `BOOKING REQUEST: ${bookingDuration} days`,
+                    lastMessage: `BOOKING REQUEST: ${bookingDuration} days for ₹${totalPrice}`,
                     [`unreadCounts.${item.ownerUid}`]: increment(1),
                     updatedAt: serverTimestamp()
                 });
 
                 await addDoc(collection(db, 'chats', roomId, 'messages'), {
                     senderId: 'system',
-                    text: `TENANT REQUEST: Rent for ${bookingDuration} days.`,
+                    text: `TENANT REQUEST: Rent for ${bookingDuration} days. Total price: ₹${totalPrice}.`,
                     timestamp: serverTimestamp(),
                     type: 'request'
                 });
@@ -530,6 +532,20 @@ const BrowseItems = () => {
                             </div>
                           </div>
                       
+                          <div className="flex flex-col gap-1 pb-2">
+                             <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected Duration</p>
+                                <p className="text-xs font-bold text-slate-900">{currentDisplayDays} {currentDisplayDays == 1 ? 'Day' : 'Days'}</p>
+                             </div>
+                             <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Total Rental Charge</p>
+                                <div className="text-right">
+                                   <p className="text-lg font-black text-blue-600 leading-none">₹{calculateTotalRent(item.rentPrice, currentDisplayDays)}</p>
+                                   <p className="text-[8px] font-bold text-blue-400 uppercase mt-1 italic leading-none">(Iterative 10% Discount Applied)</p>
+                                </div>
+                             </div>
+                          </div>
+
                           <button 
                             onClick={() => startChat(item, currentDisplayDays)}
                             disabled={item.isBooked}

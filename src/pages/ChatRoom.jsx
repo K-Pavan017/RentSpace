@@ -12,6 +12,7 @@ import {
   Send, User, Clock, ArrowLeft, Package, 
   CheckCircle, Calendar, ShieldCheck, AlertCircle, Zap
 } from 'lucide-react';
+import { calculateTotalRent } from '../utils/pricing';
 
 export default function ChatRoom() {
   const { roomId } = useParams();
@@ -133,12 +134,13 @@ export default function ChatRoom() {
     const duration = prompt("Enter rental duration (days):", "3");
     if (!duration) return;
 
+    const totalPrice = calculateTotalRent(chatData.itemPrice, duration);
     const requestData = {
       itemId: chatData.itemId,
       tenantId: user.uid,
       ownerId: chatData.ownerUid,
       duration,
-      price: chatData.itemPrice,
+      price: totalPrice,
       status: 'pending',
       timestamp: Date.now()
     };
@@ -154,7 +156,7 @@ export default function ChatRoom() {
     // 2. Log as system message
     await addDoc(collection(db, 'chats', roomId, 'messages'), {
       senderId: 'system',
-      text: `TENANT REQUEST: Rent for ${duration} days.`,
+      text: `TENANT REQUEST: Rent for ${duration} days. Total price: ₹${totalPrice}.`,
       timestamp: serverTimestamp(),
       type: 'request'
     });
@@ -337,7 +339,9 @@ export default function ChatRoom() {
                         {isOwner ? 'Rent Request Received' : 'Rental Request Pending'} <Zap size={10} className="fill-current text-yellow-400"/>
                     </h4>
                     <p className="text-sm text-emerald-700 font-bold">
-                       {isOwner ? `${otherParty} wants to rent for ${chatData.activeRequest.duration} days.` : `Waiting for ${otherParty} to confirm the ${chatData.activeRequest.duration} day rental.`}
+                       {isOwner 
+                         ? `${otherParty} wants to rent for ${chatData.activeRequest.duration} days at ₹${chatData.activeRequest.price}.` 
+                         : `Waiting for ${otherParty} to confirm the ${chatData.activeRequest.duration} day rental for ₹${chatData.activeRequest.price}.`}
                     </p>
                  </div>
               </div>
