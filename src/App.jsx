@@ -12,6 +12,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Chats from './pages/Chats'
 import ChatRoom from './pages/ChatRoom'
+import MyListings from './pages/MyListings'
 
 const ProtectedRoute = ({ user, children }) => {
   if (!user) {
@@ -121,6 +122,24 @@ function App() {
             element={
               <ProtectedRoute user={user}>
                 <BrowseItems />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/my-listings"
+            element={
+              <ProtectedRoute user={user}>
+                <MyListings />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/edit-item/:id"
+            element={
+              <ProtectedRoute user={user}>
+                <AddItem />
               </ProtectedRoute>
             }
           />

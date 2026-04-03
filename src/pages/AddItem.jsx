@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../firebaseConfig';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { 
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function AddItem() {
-  const { category } = useParams();
+  const { category: urlCategory, id } = useParams();
   const navigate = useNavigate();
   const [user] = useAuthState(auth);
 
@@ -33,20 +33,72 @@ export default function AddItem() {
     place: '',
     district: '',
     description: '',
-    // --- NEW ESSENTIAL DETAILS ---
     securityDeposit: '',
     minRentPeriod: '1 Day',
     condition: 'Good',
     isAvailable: 'Immediate',
-    idVerified: false
+    idVerified: false,
+    images: null,
+    category: urlCategory || ''
   });
 
   const [uploading, setUploading] = useState(false);
-  const [previews, setPreviews] = useState([]); // For image previews
+  const [previews, setPreviews] = useState([]); 
   const [location, setLocation] = useState({ lat: null, lng: null, error: null });
+  const [existingImages, setExistingImages] = useState([]);
+  const [loadingItem, setLoadingItem] = useState(!!id);
+
+  /* ---------------- FETCH ITEM FOR EDIT ---------------- */
+  useEffect(() => {
+    if (id) {
+      const fetchItem = async () => {
+        try {
+          const docRef = doc(db, 'listings', id);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            // Verify ownership
+            if (data.ownerUid !== user?.uid) {
+              alert("You don't have permission to edit this listing");
+              navigate('/home');
+              return;
+            }
+            setFormData({
+              title: data.title || '',
+              rentPrice: data.rentPrice || '',
+              mobile: data.mobile || '',
+              houseNo: data.address?.houseNo || '',
+              place: data.address?.place || '',
+              district: data.address?.district || '',
+              description: data.description || '',
+              securityDeposit: data.securityDeposit || '',
+              minRentPeriod: data.minRentPeriod || '1 Day',
+              condition: data.condition || 'Good',
+              isAvailable: data.isAvailable || 'Immediate',
+              idVerified: data.idVerified || false,
+              category: data.category || '',
+            });
+            setExistingImages(data.images || []);
+            setPreviews(data.images || []);
+            setLocation({ lat: data.location?.lat, lng: data.location?.lng, error: null });
+          } else {
+            alert("Listing not found");
+            navigate('/home');
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Error fetching listing");
+        } finally {
+          setLoadingItem(false);
+        }
+      };
+      if (user) fetchItem();
+    }
+  }, [id, user, navigate]);
 
   /* ---------------- AUTO LOCATION PERMISSION ---------------- */
   useEffect(() => {
+    if (id) return; // Don't override location if editing
     if (!navigator.geolocation) {
       setLocation({ lat: null, lng: null, error: 'Geolocation not supported' });
       return;
@@ -61,7 +113,7 @@ export default function AddItem() {
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  }, []);
+  }, [id]);
 
   /* ---------------- FORM HANDLING ---------------- */
   const handleChange = (e) => {
@@ -72,7 +124,9 @@ export default function AddItem() {
       setFormData(prev => ({ ...prev, images: files }));
       
       const filePreviews = fileArray.map(file => URL.createObjectURL(file));
-      setPreviews(filePreviews);
+      // In edit mode, if they pick new files, we might want to show them alongside or instead of existing
+      // For simplicity, new files replace previews in this UI
+      setPreviews([...existingImages, ...filePreviews]);
     } else if (type === 'checkbox') {
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
@@ -82,7 +136,6 @@ export default function AddItem() {
 
   const wordCount = formData.description.trim().split(/\s+/).filter(Boolean).length;
   
-
   /* ---------------- CLOUDINARY UPLOAD ---------------- */
   const uploadToCloudinary = async (file) => {
     const data = new FormData();
@@ -90,8 +143,8 @@ export default function AddItem() {
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
     const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
     data.append('file', file);
-    data.append('upload_preset', uploadPreset);//rents_upload
-    data.append('folder', category);
+    data.append('upload_preset', uploadPreset);
+    data.append('folder', formData.category || urlCategory);
 
     const res = await fetch(
       url,
@@ -127,7 +180,7 @@ export default function AddItem() {
         return;
       }
 
-      const imageUrls = [];
+      const imageUrls = [...existingImages];
       if (formData.images) {
         for (const file of Array.from(formData.images)) {
           const url = await uploadToCloudinary(file);
@@ -135,30 +188,39 @@ export default function AddItem() {
         }
       }
 
-      await addDoc(collection(db, 'listings'), {
+      const listingData = {
         title: formData.title,
         rentPrice: Number(formData.rentPrice),
         mobile: formData.mobile,
         description: formData.description,
         images: imageUrls,
-        category: category.toLowerCase(),
+        category: (formData.category || urlCategory).toLowerCase(),
         location: { lat: location.lat, lng: location.lng },
         address: { houseNo: formData.houseNo, place: formData.place, district: formData.district },
-        // --- SAVING NEW DETAILS ---
         securityDeposit: Number(formData.securityDeposit),
         condition: formData.condition,
         minRentPeriod: formData.minRentPeriod,
         isAvailable: formData.isAvailable,
         idVerified: formData.idVerified,
-        createdAt: new Date(),
-        // --- Messaging Support ---
+        updatedAt: new Date(),
         ownerUid: user?.uid || null,
         ownerEmail: user?.email || null,
-        isBooked: false,
-        bookedUntil: null,
-      });
-      alert('Listing added successfully!');
-      navigate('/home');
+      };
+
+      if (id) {
+        await updateDoc(doc(db, 'listings', id), listingData);
+        alert('Listing updated successfully!');
+      } else {
+        await addDoc(collection(db, 'listings'), {
+          ...listingData,
+          createdAt: new Date(),
+          isBooked: false,
+          bookedUntil: null,
+        });
+        alert('Listing added successfully!');
+      }
+      
+      navigate('/my-listings');
     } catch (error) {
       console.error(error);
       alert(error.message);
@@ -167,12 +229,22 @@ export default function AddItem() {
     }
   };
 
+  if (loadingItem) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
       {/* Header Section */}
       <div className="bg-slate-900 text-white pt-16 pb-32 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-extrabold mb-3 capitalize tracking-tight">List Your {category}</h1>
+          <h1 className="text-4xl font-extrabold mb-3 capitalize tracking-tight">
+            {id ? 'Edit Your Listing' : `List Your ${urlCategory || 'Item'}`}
+          </h1>
           <p className="text-slate-400">Reach thousands of potential renters in your area.</p>
         </div>
       </div>
@@ -190,7 +262,7 @@ export default function AddItem() {
             <div className="grid gap-6">
               <div className="relative">
                 <label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Listing Title</label>
-                <input name="title" placeholder="e.g. Luxury 3BHK Apartment" required onChange={handleChange}
+                <input name="title" value={formData.title} placeholder="e.g. Luxury 3BHK Apartment" required onChange={handleChange}
                   className="w-full p-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" />
               </div>
 
@@ -199,7 +271,7 @@ export default function AddItem() {
                   <label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Rent Price (Per Day/Month)</label>
                   <div className="relative">
                     <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="number" name="rentPrice" placeholder="0.00" required onChange={handleChange}
+                    <input type="number" name="rentPrice" value={formData.rentPrice} placeholder="0.00" required onChange={handleChange}
                       className="w-full pl-10 pr-4 py-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" />
                   </div>
                 </div>
@@ -207,7 +279,7 @@ export default function AddItem() {
                   <label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Contact Number</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="tel" name="mobile" placeholder="Mobile Number" required onChange={handleChange}
+                    <input type="tel" name="mobile" value={formData.mobile} placeholder="Mobile Number" required onChange={handleChange}
                       className="w-full pl-10 pr-4 py-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" />
                   </div>
                 </div>
@@ -220,13 +292,13 @@ export default function AddItem() {
                     {wordCount} / 100 Words
                   </span>
                 </div>
-                <textarea name="description" placeholder="Describe features, amenities, and rules..." rows={5} required onChange={handleChange}
+                <textarea name="description" value={formData.description} placeholder="Describe features, amenities, and rules..." rows={5} required onChange={handleChange}
                   className="w-full p-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none resize-none" />
               </div>
             </div>
           </div>
 
-          {/* NEW Section 2: Rental Terms & Quality */}
+          {/* Section 2: Rental Terms & Quality */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
             <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-4">
               <div className="p-2 bg-orange-50 text-orange-600 rounded-lg"><ShieldCheck className="w-5 h-5" /></div>
@@ -238,7 +310,7 @@ export default function AddItem() {
                 <label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Security Deposit (₹)</label>
                 <div className="relative">
                   <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="number" name="securityDeposit" placeholder="Enter 0 if none" required onChange={handleChange}
+                  <input type="number" name="securityDeposit" value={formData.securityDeposit} placeholder="Enter 0 if none" required onChange={handleChange}
                     className="w-full pl-10 pr-4 py-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" />
                 </div>
               </div>
@@ -258,7 +330,7 @@ export default function AddItem() {
                 <label className="text-xs font-bold text-slate-400 uppercase mb-2 block">Min. Rental Period</label>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input type="text" name="minRentPeriod" placeholder="e.g., 2 Days" required onChange={handleChange}
+                  <input type="text" name="minRentPeriod" value={formData.minRentPeriod} placeholder="e.g., 2 Days" required onChange={handleChange}
                     className="w-full pl-10 pr-4 py-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" />
                 </div>
               </div>
@@ -291,12 +363,12 @@ export default function AddItem() {
             </div>
             
             <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-blue-400 transition-colors relative">
-              <input type="file" name="images" multiple required onChange={handleChange}
+              <input type="file" name="images" multiple onChange={handleChange}
                 className="absolute inset-0 opacity-0 cursor-pointer" />
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-50 transition-colors">
                 <Camera className="w-8 h-8 text-slate-400 group-hover:text-blue-500" />
               </div>
-              <p className="font-bold text-slate-700">Click to upload photos</p>
+              <p className="font-bold text-slate-700">Click to upload {id ? 'more ' : ''}photos</p>
               <p className="text-sm text-slate-400 mt-1">PNG, JPG up to 10MB</p>
             </div>
 
@@ -305,6 +377,9 @@ export default function AddItem() {
                 {previews.map((src, i) => (
                   <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-100 shadow-sm">
                     <img src={src} className="w-full h-full object-cover" alt="Preview" />
+                    {id && existingImages.includes(src) && (
+                        <div className="absolute top-1 right-1 bg-blue-600 text-white text-[8px] px-1 rounded">Saved</div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -319,11 +394,11 @@ export default function AddItem() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <input name="houseNo" placeholder="House No / Door No" required onChange={handleChange}
+              <input name="houseNo" value={formData.houseNo} placeholder="House No / Door No" required onChange={handleChange}
                 className="w-full p-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" />
-              <input name="place" placeholder="Area / Landmark" required onChange={handleChange}
+              <input name="place" value={formData.place} placeholder="Area / Landmark" required onChange={handleChange}
                 className="w-full p-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" />
-              <input name="district" placeholder="City / District" required onChange={handleChange}
+              <input name="district" value={formData.district} placeholder="City / District" required onChange={handleChange}
                 className="w-full p-4 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" />
             </div>
 
@@ -346,10 +421,10 @@ export default function AddItem() {
             {uploading ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                Uploading Listing...
+                {id ? 'Updating Listing...' : 'Uploading Listing...'}
               </>
             ) : (
-              'Publish Listing'
+              id ? 'Update Listing' : 'Publish Listing'
             )}
           </button>
         </form>

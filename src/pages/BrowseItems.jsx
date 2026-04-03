@@ -167,7 +167,7 @@ const BrowseItems = () => {
 
   const navigate = useNavigate();
 
-  const startChat = async (item) => {
+  const startChat = async (item, bookingDuration = null) => {
     if (!auth.currentUser) return alert("Please Login First");
     if (!item.ownerUid) return alert("This item was listed before the messaging update. Please contact through mobile number instead.");
     if (auth.currentUser.uid === item.ownerUid) return alert("You are the owner of this item");
@@ -199,10 +199,43 @@ const BrowseItems = () => {
                 lastMessage: "Chat started"
             });
         }
+
+        // If this is a Direct Booking Request from "Book Now"
+        if (bookingDuration) {
+            const chatData = chatSnap.exists() ? chatSnap.data() : null;
+            
+            // Only send a new request if there's no active one or if the item is not booked
+            if (!chatData?.activeRequest && !item.isBooked) {
+                const requestData = {
+                    itemId: item.id,
+                    tenantId: auth.currentUser.uid,
+                    ownerId: item.ownerUid,
+                    duration: bookingDuration,
+                    price: item.rentPrice,
+                    status: 'pending',
+                    timestamp: Date.now()
+                };
+
+                await updateDoc(chatRef, {
+                    activeRequest: requestData,
+                    lastMessage: `BOOKING REQUEST: ${bookingDuration} days`,
+                    [`unreadCounts.${item.ownerUid}`]: increment(1),
+                    updatedAt: serverTimestamp()
+                });
+
+                await addDoc(collection(db, 'chats', roomId, 'messages'), {
+                    senderId: 'system',
+                    text: `TENANT REQUEST: Rent for ${bookingDuration} days.`,
+                    timestamp: serverTimestamp(),
+                    type: 'request'
+                });
+            }
+        }
+
         navigate(`/chat/${roomId}`);
     } catch (err) {
-        console.error(err);
-        alert("Failed to start chat.");
+        console.error("Booking Error:", err);
+        alert("Failed to start chat or send request.");
     }
   };
 
@@ -497,14 +530,17 @@ const BrowseItems = () => {
                             </div>
                           </div>
                       
-                          <a 
-                            href={`https://wa.me/91${item.mobile}?text=Hi, I want to rent ${item.title} for ${currentDisplayDays || '1'} days.`} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold text-base text-center shadow-lg transition-all flex items-center justify-center gap-2"
+                          <button 
+                            onClick={() => startChat(item, currentDisplayDays)}
+                            disabled={item.isBooked}
+                            className={`w-full py-4 text-white rounded-2xl font-bold text-base text-center shadow-lg transition-all flex items-center justify-center gap-2 ${
+                              item.isBooked 
+                              ? 'bg-slate-400 cursor-not-allowed' 
+                              : 'bg-emerald-500 hover:bg-emerald-600 active:scale-95'
+                            }`}
                           >
-                            Book Now
-                          </a>
+                            {item.isBooked ? 'Item Already Booked' : 'Book Now'}
+                          </button>
                         </div>
                       </div>
                     </div>

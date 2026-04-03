@@ -10,7 +10,8 @@ import {
   LayoutDashboard,
   Search,
   Home,
-  MessageSquare
+  MessageSquare,
+  Package
 } from 'lucide-react';
 import { auth, db } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
@@ -132,6 +133,7 @@ export default function Navbar() {
                     label="My Messages" 
                     onClick={() => navigate('/chats')} 
                   />
+                  <MenuLink icon={<Package className="text-purple-500" />} label="My Listings" onClick={() => navigate('/my-listings')} />
                   <MenuLink icon={<HelpCircle className="text-amber-500" />} label="Help Center" onClick={() => navigate('/help')} />
                   <div className="my-2 border-t border-slate-50" />
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm">
