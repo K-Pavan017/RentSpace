@@ -93,7 +93,7 @@ const Saved = () => {
             <button onClick={() => navigate('/browse')} className="mt-8 px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold">Start Browsing</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {savedItems.map(item => (
               <div key={item.id} className="group bg-white rounded-[2.5rem] overflow-hidden border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
                 <div className="relative h-64 overflow-hidden">
