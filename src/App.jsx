@@ -31,120 +31,121 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
-      <main>
-        <Routes>
+      <main className="overflow-x-hidden">
+        <div key={location.pathname} className="page-transition">
+          <Routes location={location}>
+            {/* Public Routes */}
+            {/* Authentication Gateway */}
+            <Route
+              path="/"
+              element={user ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />}
+            />
 
-          {/* Public Routes */}
-          {/* Authentication Gateway */}
-          <Route
-            path="/"
-            element={user ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />}
-          />
+            <Route
+              path="/login"
+              element={user ? <Navigate to="/home" replace /> : <Login />}
+            />
 
-          <Route
-            path="/login"
-            element={user ? <Navigate to="/home" replace /> : <Login />}
-          />
+            <Route
+              path="/signup"
+              element={user ? <Navigate to="/home" replace /> : <Signup />}
+            />
 
-          <Route
-            path="/signup"
-            element={user ? <Navigate to="/home" replace /> : <Signup />}
-          />
+            {/* Protected Routes */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute user={user}>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Protected Routes */}
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute user={user}>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/add-property"
+              element={
+                <ProtectedRoute user={user}>
+                  <CategorySelection />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/add-property"
-            element={
-              <ProtectedRoute user={user}>
-                <CategorySelection />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/add-item/:category"
+              element={
+                <ProtectedRoute user={user}>
+                  <AddItem />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/add-item/:category"
-            element={
-              <ProtectedRoute user={user}>
-                <AddItem />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/saved"
+              element={
+                <ProtectedRoute user={user}>
+                  <Saved />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/saved"
-            element={
-              <ProtectedRoute user={user}>
-                <Saved />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/help"
+              element={
+                <ProtectedRoute user={user}>
+                  <Help />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/help"
-            element={
-              <ProtectedRoute user={user}>
-                <Help />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/chats"
+              element={
+                <ProtectedRoute user={user}>
+                  {/* We'll create this component next */}
+                  <Chats /> 
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/chats"
-            element={
-              <ProtectedRoute user={user}>
-                {/* We'll create this component next */}
-                <Chats /> 
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/chat/:roomId"
+              element={
+                <ProtectedRoute user={user}>
+                  {/* We'll create this component next */}
+                  <ChatRoom />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/chat/:roomId"
-            element={
-              <ProtectedRoute user={user}>
-                {/* We'll create this component next */}
-                <ChatRoom />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/browse"
+              element={
+                <ProtectedRoute user={user}>
+                  <BrowseItems />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/browse"
-            element={
-              <ProtectedRoute user={user}>
-                <BrowseItems />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/my-listings"
+              element={
+                <ProtectedRoute user={user}>
+                  <MyListings />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/my-listings"
-            element={
-              <ProtectedRoute user={user}>
-                <MyListings />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/edit-item/:id"
+              element={
+                <ProtectedRoute user={user}>
+                  <AddItem />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/edit-item/:id"
-            element={
-              <ProtectedRoute user={user}>
-                <AddItem />
-              </ProtectedRoute>
-            }
-          />
-
-        </Routes>
+          </Routes>
+        </div>
       </main>
     </div>
   )

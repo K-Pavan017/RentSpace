@@ -77,7 +77,7 @@ export default function Navbar() {
           <NavLink to="/home" className="flex-shrink-0 flex items-center gap-3 group">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg shadow-blue-100 group-hover:scale-110 transition-transform duration-300">
               <img 
-                src="https://c8.alamy.com/comp/2D1NJKC/initial-letter-rs-logo-or-sr-logo-vector-design-template-2D1NJKC.jpg" 
+                src="/pwa-192x192.png" 
                 alt="RentSpace Logo" 
                 className="w-full h-full object-cover"
               />
@@ -147,10 +147,19 @@ export default function Navbar() {
       </nav>
 
       {/* MOBILE BOTTOM NAVIGATION - Visible only on Mobile/Tablet (hidden on lg) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-xl border-t border-slate-100 px-2 pb-safe-area-inset-bottom">
-        <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-xl border-t border-slate-100 px-4 pb-safe-area-inset-bottom">
+        <div className="flex justify-between items-center h-20 max-w-lg mx-auto relative">
           <MobileTab to="/home" icon={<Home size={22} />} label="Home" />
           <MobileTab to="/browse" icon={<Search size={22} />} label="Browse" />
+          
+          {/* CENTER SPECIAL TAB */}
+          <MobileTab 
+            to="/add-property" 
+            icon={<Plus size={32} strokeWidth={2.5} />} 
+            label="List" 
+            special 
+          />
+
           <MobileTab to="/chats" icon={
             <div className="relative">
               <MessageSquare size={22} />
@@ -158,7 +167,6 @@ export default function Navbar() {
             </div>
           } label="Messages" />
           <MobileTab to="/saved" icon={<Heart size={22} />} label="Saved" />
-          <MobileTab to="/add-property" icon={<Plus size={22} />} label="List" />
         </div>
       </div>
     </>
@@ -191,7 +199,33 @@ function PillNavLink({ to, label, icon }) {
   );
 }
 
-function MobileTab({ to, icon, label }) {
+function MobileTab({ to, icon, label, special }) {
+  if (special) {
+    return (
+      <NavLink to={to} className="relative -top-6 flex flex-col items-center">
+        {({ isActive }) => (
+          <>
+            <div className={`
+              w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500
+              ${isActive 
+                ? 'bg-slate-900 text-white scale-110 -rotate-90' 
+                : 'bg-blue-600 text-white hover:scale-110 active:scale-95 shadow-blue-200'
+              }
+            `}>
+              {icon}
+            </div>
+            <span className={`
+              text-[10px] font-black mt-2 uppercase tracking-tighter transition-colors duration-300
+              ${isActive ? 'text-slate-900' : 'text-blue-600'}
+            `}>
+              {label}
+            </span>
+          </>
+        )}
+      </NavLink>
+    );
+  }
+
   return (
     <NavLink to={to} className="w-full h-full">
       {({ isActive }) => (
@@ -199,12 +233,18 @@ function MobileTab({ to, icon, label }) {
           flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-300
           ${isActive ? 'text-blue-600 scale-110' : 'text-slate-400 hover:text-slate-600'}
         `}>
-          {icon}
+          <div className="relative">
+            {icon}
+            {/* Active indicator glow */}
+            {isActive && (
+              <div className="absolute inset-0 bg-blue-400/20 blur-lg rounded-full -z-10" />
+            )}
+          </div>
           <span className="text-[10px] font-bold tracking-tight">{label}</span>
           
           {/* Active indicator dot */}
           <div className={`
-            w-1 h-1 rounded-full bg-blue-600 transition-all duration-300 
+            w-1 h-1 rounded-full bg-blue-600 transition-all duration-300 mt-0.5
             ${isActive ? 'opacity-100' : 'opacity-0'}
           `} />
         </div>

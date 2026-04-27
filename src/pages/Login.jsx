@@ -29,6 +29,9 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white p-10 rounded-[3rem] shadow-xl">
+        <div className="flex justify-center mb-6">
+          <img src="/pwa-192x192.png" alt="RentSpace Logo" className="w-16 h-16 rounded-2xl shadow-lg" />
+        </div>
         <h1 className="text-3xl font-black text-center mb-6">Welcome Back</h1>
         <form onSubmit={handleLogin} className="space-y-4">
           <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 border rounded-2xl" required />
