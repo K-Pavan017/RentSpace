@@ -151,7 +151,6 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20 max-w-lg mx-auto relative">
           <MobileTab to="/home" icon={<Home size={22} />} label="Home" />
           <MobileTab to="/browse" icon={<Search size={22} />} label="Browse" />
-          
           {/* CENTER SPECIAL TAB */}
           <MobileTab 
             to="/add-property" 
@@ -159,7 +158,6 @@ export default function Navbar() {
             label="List" 
             special 
           />
-
           <MobileTab to="/chats" icon={
             <div className="relative">
               <MessageSquare size={22} />
@@ -206,14 +204,14 @@ function MobileTab({ to, icon, label, special }) {
         {({ isActive }) => (
           <>
             <div className={`
-              w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500
-              ${isActive 
-                ? 'bg-slate-900 text-white scale-110 -rotate-90' 
-                : 'bg-blue-600 text-white hover:scale-110 active:scale-95 shadow-blue-200'
-              }
-            `}>
-              {icon}
-            </div>
+            w-20 h-20 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500
+            ${isActive
+              ? 'bg-slate-900 text-white scale-115 -rotate-90'
+              : 'bg-blue-600 text-white hover:scale-115 active:scale-95 shadow-blue-200'
+            }
+          `}>
+            {icon}
+          </div>
             <span className={`
               text-[10px] font-black mt-2 uppercase tracking-tighter transition-colors duration-300
               ${isActive ? 'text-slate-900' : 'text-blue-600'}
