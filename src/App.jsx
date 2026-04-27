@@ -13,6 +13,8 @@ import Signup from './pages/Signup'
 import Chats from './pages/Chats'
 import ChatRoom from './pages/ChatRoom'
 import MyListings from './pages/MyListings'
+import ContactUs from './pages/ContactUs'
+import HowItWorks from './pages/HowItWorks'
 
 const ProtectedRoute = ({ user, children }) => {
   if (!user) {
@@ -98,11 +100,29 @@ function App() {
             />
 
             <Route
+              path="/contact"
+              element={
+                <ProtectedRoute user={user}>
+                  <ContactUs />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/how-it-works"
+              element={
+                <ProtectedRoute user={user}>
+                  <HowItWorks />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/chats"
               element={
                 <ProtectedRoute user={user}>
                   {/* We'll create this component next */}
-                  <Chats /> 
+                  <Chats />
                 </ProtectedRoute>
               }
             />

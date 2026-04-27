@@ -11,7 +11,8 @@ import {
   Search,
   Home,
   MessageSquare,
-  Package
+  Package,
+  Info
 } from 'lucide-react';
 import { auth, db } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
@@ -75,7 +76,7 @@ export default function Navbar() {
           
           {/* LOGO SECTION */}
           <NavLink to="/home" className="flex-shrink-0 flex items-center gap-3 group">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg shadow-blue-100 group-hover:scale-110 transition-transform duration-300">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shadow-lg shadow-blue-100 group-hover:scale-110 transition-transform duration-300">
               <img 
                 src="/pwa-192x192.png" 
                 alt="RentSpace Logo" 
@@ -135,6 +136,8 @@ export default function Navbar() {
                   />
                   <MenuLink icon={<Package className="text-purple-500" />} label="My Listings" onClick={() => navigate('/my-listings')} />
                   <MenuLink icon={<HelpCircle className="text-amber-500" />} label="Help Center" onClick={() => navigate('/help')} />
+                  <MenuLink icon={<Info className="text-blue-500" />} label="How it Works" onClick={() => navigate('/how-it-works')} />
+                  <MenuLink icon={<MessageCircle className="text-emerald-500" />} label="Contact Us" onClick={() => navigate('/contact')} />
                   <div className="my-2 border-t border-slate-50" />
                   <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm">
                     <LogOut size={16} /> Sign Out

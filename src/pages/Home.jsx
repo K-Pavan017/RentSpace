@@ -204,7 +204,7 @@ export default function Home() {
             <div>
               <h5 className="font-bold mb-6">Marketplace</h5>
               <ul className="space-y-4 text-slate-600 text-sm">
-                <li className="hover:text-blue-600 cursor-pointer">How it Works</li>
+                <li onClick={() => navigate('/how-it-works')} className="hover:text-blue-600 cursor-pointer">How it Works</li>
                 <li className="hover:text-blue-600 cursor-pointer">Safety & Insurance</li>
                 <li className="hover:text-blue-600 cursor-pointer">Community Rules</li>
               </ul>
@@ -212,8 +212,8 @@ export default function Home() {
             <div>
               <h5 className="font-bold mb-6">Support</h5>
               <ul className="space-y-4 text-slate-600 text-sm">
-                <li className="hover:text-blue-600 cursor-pointer">Help Center</li>
-                <li className="hover:text-blue-600 cursor-pointer">Contact Us</li>
+                <li onClick={() => navigate('/help')} className="hover:text-blue-600 cursor-pointer">Help Center</li>
+                <li onClick={() => navigate('/contact')} className="hover:text-blue-600 cursor-pointer">Contact Us</li>
                 <li className="hover:text-blue-600 cursor-pointer">Privacy Policy</li>
               </ul>
             </div>
