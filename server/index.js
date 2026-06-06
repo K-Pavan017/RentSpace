@@ -9,7 +9,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // In production, specify your frontend URL
+    origin: ["http://localhost:5173", "https://rentspace-rentals.vercel.app"],// In production, specify your frontend URL
     methods: ["GET", "POST"]
   }
 });
